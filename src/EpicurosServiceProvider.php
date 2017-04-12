@@ -28,9 +28,11 @@ class EpicurosServiceProvider extends ServiceProvider
             ]);
         }
 
-        $this->publishes([
-            __DIR__ . '/config/epicuros.php' => config_path('epicuros.php'),
-        ]);
+        if (! $this->isLumen()) {
+            $this->publishes([
+                __DIR__ . '/config/epicuros.php' => config_path('epicuros.php'),
+            ]);
+        }
     }
 
     /**
@@ -76,5 +78,13 @@ class EpicurosServiceProvider extends ServiceProvider
             Epicuros::class,
             'epicuros',
         ];
+    }
+
+    /**
+     * @return bool
+     */
+    protected function isLumen()
+    {
+        return str_contains($this->app->version(), 'Lumen');
     }
 }
