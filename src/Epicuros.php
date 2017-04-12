@@ -203,22 +203,62 @@ class Epicuros
     }
 
     /**
-     * @return string
+     * @param  string  $jwt
+     * @return string|null
      */
-    public function getVerifyingKey(string $name) : string
+    public function getVerifyingKey(string $jwt = null) : ?string
     {
-        if ($this->algorithm === 'RS256') {
-            $key = array_filter($this->publicKeys, function ($value, $key) {
-                return $key === $name;
-            }, ARRAY_FILTER_USE_BOTH);
+        $name = $this->getIssuer($jwt);
 
+        $key = array_filter($this->publicKeys, function ($value, $key) {
+            return $key === $name;
+        }, ARRAY_FILTER_USE_BOTH);
+
+        if ($this->algorithm === 'RS256') {
             try {
                 return file_get_contents(storage_path($key));
             } catch (\Exception $e) {
                 throw new SigningKeyNotFoundException();
             }
-        } else {
-            return $this->key;
         }
+
+        return $key ?? null;
+    }
+
+    /**
+     * Get the issuer of the JWT token.
+     *
+     * @param  string  $jwt
+     * @return string|null
+     */
+    public function getIssuer(string $jwt) : ?string
+    {
+        return $this->getClaims($jwt)['iss'];
+    }
+
+    /**
+     * @return string
+     */
+    public function getAlgorithm() ? string
+    {
+        return $this->algorithm;
+    }
+
+    /**
+     * @param  string  $jwt
+     * @return array|null
+     */
+    public function getHeader(string $jwt) ?array
+    {
+        return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[0]));
+    }
+
+    /**
+     * @param  string  $jwt
+     * @return array|null
+     */
+    public function getClaims(string $jwt) ?array
+    {
+        return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[1]));
     }
 }

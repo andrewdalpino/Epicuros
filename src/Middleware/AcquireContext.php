@@ -2,12 +2,28 @@
 
 namespace AndrewDalpino\Epicuros\Middleware;
 
+use AndrewDalpino\Epicuros\Epicuros;
 use AndrewDalPino\Epicuros\Context;
 use Firebase\JWT\JWT;
 use Closure;
 
 class AcquireContext
 {
+    /**
+     * @var  AndrewDalpino\Epicuros\Epicuros  $epicuros
+     */
+    protected $epicuros;
+
+    /**
+     * Constructor.
+     *
+     * @param  Epicuros  $epicuros
+     */
+    public function __construct(Epicuros $epicuros)
+    {
+        $this->epicuros = $epicuros;
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -18,22 +34,21 @@ class AcquireContext
     public function handle($request, Closure $next)
     {
         try {
-            $bearer = $request->getBearer();
+            $jwt = $request->getBearer();
 
-            $key = $this->getPublicKey();
+            $key = $this->epicuros->getVerifyingKey($jwt);
 
-            $jwt = JWT::decode($bearer, $key, ['RS256']);
+            $claims = JWT::decode($jwt, $key, $this->epicuros->getAlgorithm());
 
-            $viewerId = $jwt->sub ?? null;
-            $scopes =  $jwt->scopes ?? [];
-            $permissions = $jwt->permissions ?? [];
-            $verified = $jwt->verified ?? false;
-            $ip = $jwt->ip ?? null;
+            $viewerId = $claims->sub ?? null;
+            $scopes =  $claims->scopes ?? [];
+            $permissions = $claims->permissions ?? [];
+            $verified = $claims->verified ?? false;
+            $ip = $claims->ip ?? null;
 
-            $context = Context::build($viewerId, $scopes, $permissions, $verified, $ip);
-
+            $context = new Context($viewerId, $scopes, $permissions, $verified, $ip);
         } catch (\Exception $e) {
-            $context = Context::build(null, [], [], false, null);
+            $context = new Context(null, [], [], false, null);
         }
 
         $request->merge([

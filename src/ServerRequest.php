@@ -250,6 +250,11 @@ class ServerRequest extends GuzzleRequest
             $queryString .= '?include=' . implode(',', $this->includes);
         }
 
+        if ($this->hasCursor()) {
+            $queryString .= substr(0, 1, $queryString) === '?' ? '&' : '?';
+            $queryString .= 'cursor=' . $this->cursor->getOffset() . ',' . $this->cursor->getPrevious() . ',' . $this->cursor->getLimit();
+        }
+
         return $queryString;
     }
 

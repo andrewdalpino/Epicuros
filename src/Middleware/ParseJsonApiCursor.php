@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Middleware;
+namespace AndrewDalpino\Epicuros\Middleware;
 
-use App\Domain\Common\Cursor;
+use AndrewDalpino\Epicuros\Cursor;
 use Closure;
 
 class ParseJsonApiCursor
@@ -23,13 +23,9 @@ class ParseJsonApiCursor
             $previous = (int) $data[1] ?? null;
             $limit = (int) $data[2] ?? Cursor::DEFAULT_LIMIT;
 
-            if ($limit > Cursor::MAX_PER_REQUEST) {
-                $limit = Cursor::MAX_PER_REQUEST;
-            }
-
-            $cursor = Cursor::build($offset, $previous, $limit, null);
+            $cursor = new Cursor($offset, $previous, $limit);
         } else {
-            $cursor = Cursor::build(0, null, Cursor::DEFAULT_LIMIT, null);
+            $cursor = new Cursor(0, null, Cursor::DEFAULT_LIMIT);
         }
 
         $request->merge([

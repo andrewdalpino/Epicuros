@@ -2,7 +2,9 @@
 
 namespace AndrewDalpino\Epicuros;
 
-class Context
+use JsonSerializable;
+
+class Context implements JsonSerializable
 {
     /**
      * The viewer identifier.
@@ -118,5 +120,35 @@ class Context
     public function getIp() : ?string
     {
         return $this->ip;
+    }
+
+    /**
+     * @return array
+     */
+    public function toArray() : array
+    {
+        return [
+            'viewerId' => $this->getViewerId(),
+            'scopes' => $this->getScopes(),
+            'permissions' => $this->getPermissions(),
+            'verified' => $this->getVerified(),
+            'ip' => $this->getIp(),
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function jsonSerialize() : array
+    {
+        return $this->toArray();
+    }
+
+    /**
+     * @return string
+     */
+    public function __toString() : string
+    {
+        return json_encode($this);
     }
 }
