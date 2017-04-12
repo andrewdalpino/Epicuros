@@ -204,17 +204,19 @@ class Epicuros
 
     /**
      * @param  string  $jwt
-     * @return string|null
+     * @return string
      */
-    public function getVerifyingKey(string $jwt = null) : ?string
+    public function getVerifyingKey(string $jwt) : ?string
     {
-        $name = $this->getIssuer($jwt);
+        $issuer = $this->getIssuer($jwt);
 
-        $key = array_filter($this->publicKeys, function ($value, $key) {
-            return $key === $name;
-        }, ARRAY_FILTER_USE_BOTH);
+        foreach ($this->publicKeys as $k => $v) {
+            if ($k === $issuer) {
+                $key = $v;
+            }
+        }
 
-        if ($this->algorithm === 'RS256') {
+        if ($this->getAlgorithm() === 'RS256') {
             try {
                 return file_get_contents(storage_path($key));
             } catch (\Exception $e) {
@@ -233,7 +235,7 @@ class Epicuros
      */
     public function getIssuer(string $jwt) : ?string
     {
-        return $this->getClaims($jwt)['iss'];
+        return $this->getClaims($jwt)->iss ?? null;
     }
 
     /**
@@ -246,18 +248,18 @@ class Epicuros
 
     /**
      * @param  string  $jwt
-     * @return array|null
+     * @return object|null
      */
-    public function getHeader(string $jwt) : ?array
+    public function getHeader(string $jwt)
     {
         return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[0]));
     }
 
     /**
      * @param  string  $jwt
-     * @return array|null
+     * @return object|null
      */
-    public function getClaims(string $jwt) : ?array
+    public function getClaims(string $jwt)
     {
         return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[1]));
     }
