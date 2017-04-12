@@ -89,7 +89,7 @@ class ServerRequest extends GuzzleRequest
     {
         $this->server = $server;
 
-        return $serverRequest;
+        return $this;
     }
 
     /**
@@ -99,7 +99,7 @@ class ServerRequest extends GuzzleRequest
      * @throws \App\Services\Support\Epicuros\HttpMethodNotAllowedException
      * @return self
      */
-    public function setMethod(string $method)
+    public function setHttpMethod(string $method)
     {
         $method = strtoupper($method);
 

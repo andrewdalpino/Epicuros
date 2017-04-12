@@ -84,14 +84,24 @@ class Epicuros
     }
 
     /**
+     * Create a new server request.
+     *
+     * @return ServerRequest
+     */
+    public static function createServerRequest()
+    {
+        return new ServerRequest();
+    }
+
+    /**
      * Send a single request to the server.
      *
-     * @param  ServerRequest  $serverRequest
+     * @param  ServerRequest  $request
      * @return \Psr\Http\Message\ResponseInterface
      */
     public function send(ServerRequest $request)
     {
-         $this->client->send($request, $this->getOptions($request));
+         return $this->client->send($request, $this->getOptions($request));
     }
 
     /**
@@ -123,14 +133,14 @@ class Epicuros
      * @param  ServerRequest  $request
      * @return array
      */
-    protected function getOptions(ServerReuqest $request) : array
+    protected function getOptions(ServerRequest $request) : array
     {
         return [
             'headers' => [
-                'Authorization' => $this->getBearer($request);
+                'Authorization' => $this->getBearer($request),
             ],
             'body' => $this->getBody($request),
-        ],
+        ];
     }
 
     /**
@@ -186,7 +196,7 @@ class Epicuros
         }
 
         if ($request->hasCursor()) {
-            $body['meta']['cursor'] => $request->getCursor()->toArray();
+            $body['meta']['cursor'] = $request->getCursor()->toArray();
         }
 
         return json_encode($body);

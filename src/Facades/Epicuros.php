@@ -1,6 +1,6 @@
 <?php
 
-namespace AndrewDalPino\Epicuros\Facades;
+namespace AndrewDalpino\Epicuros\Facades;
 
 use Illuminate\Support\Facades\Facade;
 

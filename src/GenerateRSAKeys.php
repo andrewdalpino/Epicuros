@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 class GenerateRSAKeys extends Command
 {
-    const STORAGE_FOLDER = '/certs/';
+    const STORAGE_FOLDER = 'certs/';
     const FOLDER_UMASK = 0755;
     const PRIVATE_KEY_SUFFIX = '-private.key';
     const PUBLIC_KEY_SUFFIX = '-public.key';
@@ -60,8 +60,8 @@ class GenerateRSAKeys extends Command
             mkdir($folder, self::FOLDER_UMASK, true);
         }
 
-        $path['private'] = storage_path($folder . Str::slug($this->argument('name')) . self::PRIVATE_KEY_SUFFIX);
-        $path['public'] = storage_path($folder . Str::slug($this->argument('name')) . self::PUBLIC_KEY_SUFFIX);
+        $path['private'] = $folder . Str::slug($this->argument('name')) . self::PRIVATE_KEY_SUFFIX;
+        $path['public'] = $folder . Str::slug($this->argument('name')) . self::PUBLIC_KEY_SUFFIX;
 
         if (! $this->option('force')) {
             if (file_exists($path['private']) || file_exists($path['public'])) {
@@ -75,6 +75,6 @@ class GenerateRSAKeys extends Command
         file_put_contents($path['private'], $keys['privatekey']);
         file_put_contents($path['public'], $keys['publickey']);
 
-        $this->info(self::RSA_BITS . 'bit RSA keys generated successfully in' . storage_path(self::STORAGE_FOLDER) . '.');
+        $this->info(self::RSA_BITS . 'bit RSA keys generated successfully in ' . storage_path(self::STORAGE_FOLDER) . '.');
     }
 }

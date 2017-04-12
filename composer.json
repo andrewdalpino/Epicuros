@@ -1,6 +1,6 @@
 {
     "name": "andrewdalpino/epicuros",
-    "description": "A client library for secure communication with JSON API based REST microservices.",
+    "description": "A client library for secure communication with JSON API based REST microservices designed for Laravel and Lumen.",
     "license": "MIT",
     "keywords": ["laravel", "lumen", "api", "json", "client", "microservices", "async"],
     "authors": [
