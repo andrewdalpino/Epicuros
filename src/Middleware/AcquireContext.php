@@ -4,6 +4,7 @@ namespace AndrewDalpino\Epicuros\Middleware;
 
 use AndrewDalpino\Epicuros\Epicuros;
 use AndrewDalPino\Epicuros\Context;
+use AndrewDalpino\Epicuros\Exceptions\ServiceUnauthorizedException;
 use Firebase\JWT\JWT;
 use Closure;
 
@@ -46,14 +47,12 @@ class AcquireContext
             $verified = $claims->verified ?? false;
             $ip = $claims->ip ?? null;
 
-            $context = new Context($viewerId, $scopes, $permissions, $verified, $ip);
+            $request->merge([
+                'context' => new Context($viewerId, $scopes, $permissions, $verified, $ip),
+            ]);
         } catch (\Exception $e) {
-            $context = new Context(null, [], [], false, null);
+            throw new ServiceUnauthorizedException();
         }
-
-        $request->merge([
-            'context' => $context,
-        ]);
 
         return $next($request);
     }

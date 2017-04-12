@@ -58,7 +58,7 @@ class EpicurosServiceProvider extends ServiceProvider
                 $key,
                 config('epicuros.algorithm', 'RS256'),
                 config('epicuros.jwt_expire', 60),
-                config('epicuros.rsa_key_mapppings', [])
+                config('epicuros.key_mappings', [])
             );
         });
 

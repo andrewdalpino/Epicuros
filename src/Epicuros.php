@@ -239,7 +239,7 @@ class Epicuros
     /**
      * @return string
      */
-    public function getAlgorithm() ? string
+    public function getAlgorithm() : string
     {
         return $this->algorithm;
     }
@@ -248,7 +248,7 @@ class Epicuros
      * @param  string  $jwt
      * @return array|null
      */
-    public function getHeader(string $jwt) ?array
+    public function getHeader(string $jwt) : ?array
     {
         return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[0]));
     }
@@ -257,7 +257,7 @@ class Epicuros
      * @param  string  $jwt
      * @return array|null
      */
-    public function getClaims(string $jwt) ?array
+    public function getClaims(string $jwt) : ?array
     {
         return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[1]));
     }

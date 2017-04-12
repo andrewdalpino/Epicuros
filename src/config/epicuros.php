@@ -85,18 +85,19 @@ return [
 
    /*
    |--------------------------------------------------------------------------
-   | RSA Public Key Mappings
+   | Public Key Mappings
    |--------------------------------------------------------------------------
    |
    | These are the mappings of clients services to their public key.
-   | The array key is the client name, and the value is a path from
-   | the local storage folder to the public key.
+   | The array key is the client name, and the value is either a path
+   | to the RSA key from the local storage folder or a shared HMAC.
    |
    | Default: none
-   | Example: 'client_name' => '/certs/client-public.key',
+   | Example: 'foo' => '/certs/client-public.key',
+   | Example: 'bar' => '8016870d16216dafc58718698bf0...',
    */
 
-   'rsa_key_mappings' => [
+   'key_mappings' => [
        //
    ],
 
