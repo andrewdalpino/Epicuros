@@ -2,11 +2,13 @@
 
 namespace AndrewDalpino\Epicuros;
 
-use AndrewDalpino\Epicuros\InvalidSigningAlgorithmException;
-use AndrewDalpino\Epicuros\SigningKeyNotFoundException;
+use AndrewDalpino\Epicuros\Exceptions\InvalidSigningAlgorithmException;
+use AndrewDalpino\Epicuros\Exceptions\SigningKeyNotFoundException;
+use AndrewDalpino\Epicuros\Exceptions\ServiceUnauthorizedException;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Pool;
 use Ramsey\Uuid\Uuid;
 use Firebase\JWT\JWT;
 
@@ -34,13 +36,6 @@ class Epicuros
      *  @var  string  $algorithm
      */
     protected $algorithm;
-
-    /**
-     * The number of seconds before a token expires.
-     *
-     * @var  int  $expire
-     */
-    protected $expire;
 
     /**
      * The public/shared key mappings of all the services.
@@ -77,7 +72,7 @@ class Epicuros
      * @param  array  $publicKeys
      * @return void
      */
-    public function __construct(ClientInterface $client, string $key, string $algorithm, int $expire, array $publicKeys = [])
+    public function __construct(ClientInterface $client, string $key, string $algorithm, array $publicKeys = [])
     {
         if (! in_array($algorithm, $this->allowedAlgorithms)) {
             throw new InvalidSigningAlgorithmException();
@@ -86,7 +81,6 @@ class Epicuros
         $this->client = $client;
         $this->key = $key;
         $this->algorithm = $algorithm;
-        $this->expire = $expire;
         $this->publicKeys = $publicKeys;
     }
 
@@ -125,30 +119,37 @@ class Epicuros
     }
 
     /**
+     * @return array
+     */
+    protected function releaseQueue() : array
+    {
+        $requests = $this->queue;
+        $this->queue = [];
+
+        return $requests;
+    }
+
+    /**
      * Execute the queued server requests concurrently.
      *
      * @return array
      */
     public function execute()
     {
-        // TODO
-    }
+        $requests = $this->releaseQueue();
 
-    /**
-     * Verify the token and extract the claims.
-     *
-     * @param  string  $jwt
-     * @return stdClass
-     */
-    public function authorize(string $jwt)
-    {
-        try {
-            $claims = JWT::decode($jwt, $this->getVerifyingKey($jwt), [$this->getAlgorithm()]);
-        } catch (\Exception $e) {
-            throw new ServiceUnauthorizedException();
-        }
+        $pool = new Pool($this->client, $requests, [
+            'concurrency' => config('epicuros.async_concurrency', 5),
+            'options' => $this->getOptions(),
+            'fulfilled' => function ($response, $index) {
+                // this is delivered each successful response
+            },
+            'rejected' => function ($reason, $index) {
+                // this is delivered each failed request
+            },
+        ]);
 
-        return $this->acquireContext($claims);
+        $pool->promise()->wait();
     }
 
     /**
@@ -161,9 +162,13 @@ class Epicuros
     {
         return [
             'headers' => [
-                'Authorization' => $this->getBearer($request),
+                'Authorization' => $this->generateBearerToken($request),
             ],
-            'body' => $this->getBody($request),
+            'query' => [
+                'include' => $request->hasIncludes() ? $request->getIncludes() : null,
+                'cursor' => $request->hasCursor() ? $request->getCursor() : null,
+            ],
+            'json' => $request->getJsonBody(),
         ];
     }
 
@@ -173,12 +178,12 @@ class Epicuros
      * @param  ServerRequest  $request
      * @return string
      */
-    protected function getBearer(ServerRequest $request) : string
+    protected function generateBearerToken(ServerRequest $request) : string
     {
         $claims = [
             'jti' => $this->generateUuid(),
             'iss' => config('epicuros.client_name', 'Epicuros'),
-            'exp' => time() + intval($this->expire),
+            'exp' => time() + intval(config('epiuros.token_expire', 60)),
             'iat' => time(),
         ];
 
@@ -198,24 +203,24 @@ class Epicuros
     }
 
     /**
-     * Get the JSON body of the request.
+     * Verify the token and extract the claims.
      *
-     * @param  ServerRequest $request
-     * @return string
+     * @param  string  $jwt
+     * @return stdClass
      */
-    protected function getBody(ServerRequest $request) : ?string
+    public function authorize(string $jwt = null)
     {
-        $body = [];
-
-        if ($request->hasParams()) {
-            $body['params'] = $request->getParams();
+        if (is_null($jwt)) {
+            throw new ServiceUnauthorizedException();
         }
 
-        if ($request->hasCursor()) {
-            $body['meta']['cursor'] = $request->getCursor()->toArray();
+        try {
+            $claims = JWT::decode($jwt, $this->getVerifyingKey($jwt), [$this->getAlgorithm()]);
+        } catch (\Exception $e) {
+            throw new ServiceUnauthorizedException();
         }
 
-        return json_encode($body);
+        return $this->acquireContext($claims);
     }
 
     /**
@@ -241,24 +246,20 @@ class Epicuros
      */
     public function getVerifyingKey(string $jwt) : ?string
     {
-        $issuer = $this->getIssuer($jwt);
+        $issuer = $this->getTokenIssuer($jwt);
 
-        foreach ($this->publicKeys as $k => $v) {
-            if ($k === $issuer) {
-                $key = $v;
+        foreach ($this->publicKeys as $name => $publicKey) {
+            if ($name === $issuer) {
+                $key = $publicKey;
             }
         }
 
-        if ($this->getAlgorithm() === 'RS256') {
+        if ($this->getAlgorithm() === 'RS256' && is_file(storage_path($key))) {
             try {
                 $key = file_get_contents(storage_path($key));
             } catch (\Exception $e) {
-                $key = null;
+                throw new SigningKeyNotFoundException();
             }
-        }
-
-        if (is_null($key)) {
-            throw new SigningKeyNotFoundException();
         }
 
         return $key;

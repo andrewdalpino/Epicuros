@@ -8,6 +8,8 @@ use Illuminate\Support\ServiceProvider;
 
 class EpicurosServiceProvider extends ServiceProvider
 {
+    const HTTP_VERSION = '1.1';
+
     /**
      * Indicates if loading of the provider is deferred until requested by the container.
      *
@@ -55,11 +57,12 @@ class EpicurosServiceProvider extends ServiceProvider
         $this->app->singleton(Epicuros::class, function () use ($key) {
             return new Epicuros(
                 new GuzzleClient([
+                    'version' => self::HTTP_VERSION,
                     'headers' => config('epicuros.headers', []),
+                    'timeout' => config('epicuros.request_timeout', 0),
                 ]),
                 $key,
                 config('epicuros.algorithm', 'RS256'),
-                config('epicuros.jwt_expire', 60),
                 config('epicuros.key_mappings', [])
             );
         });

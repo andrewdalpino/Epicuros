@@ -3,12 +3,12 @@
 namespace AndrewDalpino\Epicuros\Middleware;
 
 use AndrewDalpino\Epicuros\Epicuros;
-use AndrewDalpino\Epicuros\Context;
+use AndrewDalPino\Epicuros\Context;
 use AndrewDalpino\Epicuros\Exceptions\ServiceUnauthorizedException;
 use Firebase\JWT\JWT;
 use Closure;
 
-class AuthorizeService
+class AcquireContext
 {
     /**
      * @var  AndrewDalpino\Epicuros\Epicuros  $epicuros
@@ -35,10 +35,20 @@ class AuthorizeService
     public function handle($request, Closure $next)
     {
         try {
-            $context = $this->epicuros->authorize($request->bearerToken());
+            $jwt = $request->getBearer();
+
+            $key = $this->epicuros->getVerifyingKey($jwt);
+
+            $claims = JWT::decode($jwt, $key, $this->epicuros->getAlgorithm());
+
+            $viewerId = $claims->sub ?? null;
+            $scopes =  $claims->scopes ?? [];
+            $permissions = $claims->permissions ?? [];
+            $verified = $claims->verified ?? false;
+            $ip = $claims->ip ?? null;
 
             $request->merge([
-                'context' => $context,
+                'context' => new Context($viewerId, $scopes, $permissions, $verified, $ip),
             ]);
         } catch (\Exception $e) {
             throw new ServiceUnauthorizedException();

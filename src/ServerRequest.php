@@ -2,9 +2,10 @@
 
 namespace AndrewDalpino\Epicuros;
 
-use GuzzleHttp\Psr7\Request as GuzzleRequest;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Uri;
 
-class ServerRequest extends GuzzleRequest
+class ServerRequest extends Request
 {
     const HTTP_PREFIX = 'http://';
     const HTTPS_PREFIX = 'https://';
@@ -28,12 +29,16 @@ class ServerRequest extends GuzzleRequest
      *
      * @var  array  $params
      */
-    protected $params;
+    protected $params = [
+        //
+    ];
 
     /**
      * @var  array  $includes
      */
-    protected $includes;
+    protected $includes = [
+        //
+    ];
 
     /**
      * @var  Context  $context
@@ -76,7 +81,7 @@ class ServerRequest extends GuzzleRequest
     }
 
     /**
-     * Use this server to handle the request.
+     * Use this resource server to handle the request.
      *
      * @param  string  $server
      * @return self
@@ -103,9 +108,7 @@ class ServerRequest extends GuzzleRequest
             throw new HttpMethodNotAllowedException;
         }
 
-        $this->withMethod($method);
-
-        return $this;
+        return $this->withMethod($method);
     }
 
     /**
@@ -130,7 +133,7 @@ class ServerRequest extends GuzzleRequest
      */
     public function withParams(array $params)
     {
-        array_merge($params, $this->params);
+        $this->params = array_merge($params, $this->params);
 
         return $this;
     }
@@ -181,26 +184,13 @@ class ServerRequest extends GuzzleRequest
     }
 
     /**
-     * Format the uniform resource locator.
-     *
-     * @param  string  $serverAddress
-     * @param  string  $uri
-     * @param  array  $includes
-     * @return string
+     * @return \Psr\Http\Message\Uri
      */
-    public function getUri() : ?string
+    public function getUri()
     {
         $prefix = $this->secure ? self::HTTPS_PREFIX : self::HTTP_PREFIX;
 
-        return $prefix . $this->server . $this->resource . $this->formatQueryString();
-    }
-
-    /**
-     * @return array
-     */
-    public function getParams() : array
-    {
-        return $this->params;
+        return new Uri($prefix . $this->server . $this->resource);
     }
 
     /**
@@ -216,43 +206,48 @@ class ServerRequest extends GuzzleRequest
      */
     public function getCursor()
     {
-        return $this->cursor;
+        return $this->cursor->getOffset() . ',' . $this->cursor->getPrevious() . ',' . $this->cursor->getLimit();
     }
 
     /**
-     * Hydrate the uniform resource identifier with parameters.
-     *
-     * @param  string  $uri
-     * @param  array  $parameters
-     * @return string
+     * @return string|null
      */
-    public function hydrateUri(string $uri, array $parameters) : string
+    public function getIncludes() : ?string
     {
-        foreach ($parameters as $parameter) {
-            $uri = preg_replace('/[\[{\(].*[\]}\)]/U', (string) $parameter, $uri, 1);
-        }
-
-        return $uri;
+        return implode(',', $this->includes);
     }
 
     /**
-     * @return string
-     */
-    public function formatQueryString() : string
-    {
-        $queryString = '';
+    * Get the JSON body of the request.
+    *
+    * @return string
+    */
+   public function getJsonBody() : ?string
+   {
+       $body = [];
 
-        if ($this->hasIncludes()) {
-            $queryString .= '?include=' . implode(',', $this->includes);
-        }
+       if ($this->hasParams()) {
+           $body['params'] = $this->params;
+       }
 
-        if ($this->hasCursor()) {
-            $queryString .= substr(0, 1, $queryString) === '?' ? '&' : '?';
-            $queryString .= 'cursor=' . $this->cursor->getOffset() . ',' . $this->cursor->getPrevious() . ',' . $this->cursor->getLimit();
-        }
+       return json_encode($body);
+   }
 
-        return $queryString;
-    }
+   /**
+    * Hydrate the uniform resource identifier with parameters.
+    *
+    * @param  string  $uri
+    * @param  array  $parameters
+    * @return string
+    */
+   public function hydrateUri(string $uri, array $parameters) : string
+   {
+       foreach ($parameters as $parameter) {
+           $uri = preg_replace('/[\[{\(].*[\]}\)]/U', (string) $parameter, $uri, 1);
+       }
+
+       return $uri;
+   }
 
     /**
      * Does the current request have includes?
@@ -285,7 +280,7 @@ class ServerRequest extends GuzzleRequest
     }
 
     /**
-     * Does the request have a cursor?s
+     * Does the request have a cursor?
      *
      * @return bool
      */
