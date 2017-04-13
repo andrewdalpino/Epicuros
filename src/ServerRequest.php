@@ -227,7 +227,7 @@ class ServerRequest extends Request
        $body = [];
 
        if ($this->hasParams()) {
-           $body['params'] = $this->params;
+           $body[config('epicuros.params_prefix', 'params')] = $this->params;
        }
 
        return json_encode($body);

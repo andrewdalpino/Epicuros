@@ -8,12 +8,10 @@ use Illuminate\Support\ServiceProvider;
 
 class EpicurosServiceProvider extends ServiceProvider
 {
-    const HTTP_VERSION = '1.1';
-
     /**
      * Indicates if loading of the provider is deferred until requested by the container.
      *
-     * @var  boolean  $defer
+     * @var  bool  $defer
      */
     protected $defer = true;
 
@@ -44,20 +42,20 @@ class EpicurosServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        try {
-            if (config('epicuros.algorithm') === 'RS256') {
-                $key = file_get_contents(storage_path(config('epicuros.signing_key')));
-            } else {
-                $key = config('epicuros.signing_key');
+        $key = config('epicuros.signing_key');
+
+        if (config('epicuros.algorithm') === 'RS256' && is_file(storage_path($key))) {
+            try {
+                $key = file_get_contents(storage_path($key));
+            } catch (\Exception $e) {
+                throw new SigningKeyNotFoundException();
             }
-        } catch (\Exception $e) {
-            throw new SigningKeyNotFoundException();
         }
 
         $this->app->singleton(Epicuros::class, function () use ($key) {
             return new Epicuros(
                 new GuzzleClient([
-                    'version' => self::HTTP_VERSION,
+                    'version' => config('epicuros.http_version', '1.1'),
                     'headers' => config('epicuros.headers', []),
                     'timeout' => config('epicuros.request_timeout', 0),
                 ]),
@@ -71,11 +69,9 @@ class EpicurosServiceProvider extends ServiceProvider
     }
 
     /**
-     * Get the services provided by the provider.
-     *
      * @return array
      */
-    public function provides()
+    public function provides() : array
     {
         return [
             Epicuros::class,
@@ -86,7 +82,7 @@ class EpicurosServiceProvider extends ServiceProvider
     /**
      * @return bool
      */
-    protected function isLumen()
+    protected function isLumen() : bool
     {
         return str_contains($this->app->version(), 'Lumen');
     }

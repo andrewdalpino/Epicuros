@@ -15,8 +15,10 @@ class ParseJsonApiIncludes
      */
     public function handle($request, Closure $next)
     {
+        $includes = $request->has('include') ? explode(',', str_replace(' ', '', $request->get('include'))) : [];
+
         $request->merge([
-            'includes' => $request->has('include') ? explode(',', str_replace(' ', '', $request->get('include'))) : [],
+            'includes' => $includes,
         ]);
 
         return $next($request);
