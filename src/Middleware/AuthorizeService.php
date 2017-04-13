@@ -8,7 +8,7 @@ use AndrewDalpino\Epicuros\Exceptions\ServiceUnauthorizedException;
 use Firebase\JWT\JWT;
 use Closure;
 
-class AcquireContext
+class AuthorizeService
 {
     /**
      * @var  AndrewDalpino\Epicuros\Epicuros  $epicuros
@@ -35,20 +35,8 @@ class AcquireContext
     public function handle($request, Closure $next)
     {
         try {
-            $jwt = $request->bearerToken();
-
-            $key = $this->epicuros->getVerifyingKey($jwt);
-
-            $claims = JWT::decode($jwt, $key, [$this->epicuros->getAlgorithm()]);
-
-            $viewerId = $claims->sub ?? null;
-            $scopes =  $claims->scopes ?? [];
-            $permissions = $claims->permissions ?? [];
-            $verified = $claims->verified ?? false;
-            $ip = $claims->ip ?? null;
-
             $request->merge([
-                'context' => new Context($viewerId, $scopes, $permissions, $verified, $ip),
+                'context' => $this->epicuros->acquireContext($request->bearerToken()),
             ]);
         } catch (\Exception $e) {
             throw new ServiceUnauthorizedException();

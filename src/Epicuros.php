@@ -4,9 +4,9 @@ namespace AndrewDalpino\Epicuros;
 
 use AndrewDalpino\Epicuros\InvalidSigningAlgorithmException;
 use AndrewDalpino\Epicuros\SigningKeyNotFoundException;
-use GuzzleHttp\ClientInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use GuzzleHttp\ClientInterface;
 use Ramsey\Uuid\Uuid;
 use Firebase\JWT\JWT;
 
@@ -29,18 +29,25 @@ class Epicuros
     protected $key;
 
     /**
-     * The public key mappings of all the client services.
-     *
-     * @var  array  $publicKeys
-     */
-    protected $publicKeys;
-
-    /**
      * The algorithm to use when signing and verifying JWTs.
      *
      *  @var  string  $algorithm
      */
     protected $algorithm;
+
+    /**
+     * The number of seconds before a token expires.
+     *
+     * @var  int  $expire
+     */
+    protected $expire;
+
+    /**
+     * The public/shared key mappings of all the services.
+     *
+     * @var  array  $publicKeys
+     */
+    protected $publicKeys;
 
     /**
      * The queued server requests.
@@ -54,7 +61,7 @@ class Epicuros
     /**
      * The allowed signing algorithms.
      *
-     * @var  array  allowedAlgorithms
+     * @var  array  $allowedAlgorithms
      */
     protected $allowedAlgorithms = [
         'RS256', 'HS256', 'HS384', 'HS512',
@@ -128,6 +135,23 @@ class Epicuros
     }
 
     /**
+     * Verify the token and extract the claims.
+     *
+     * @param  string  $jwt
+     * @return stdClass
+     */
+    public function authorize(string $jwt)
+    {
+        try {
+            $claims = JWT::decode($jwt, $this->getVerifyingKey($jwt), [$this->getAlgorithm()]);
+        } catch (\Exception $e) {
+            throw new ServiceUnauthorizedException();
+        }
+
+        return $this->acquireContext($claims);
+    }
+
+    /**
      * Get the request options.
      *
      * @param  ServerRequest  $request
@@ -141,14 +165,6 @@ class Epicuros
             ],
             'body' => $this->getBody($request),
         ];
-    }
-
-    /**
-     * @return string
-     */
-    protected function generateUuid() : string
-    {
-        return Uuid::uuid4()->toString();
     }
 
     /**
@@ -203,6 +219,23 @@ class Epicuros
     }
 
     /**
+     * Acquire the context from
+     *
+     * @param  string  $jwt
+     * @return Context
+     */
+    public function acquireContext($claims)
+    {
+        return new Context(
+            $claims->sub ?? null,
+            $claims->scopes ?? [],
+            $claims->permissions ?? [],
+            $claims->verified ?? false,
+            $claims->ip ?? null
+        );
+    }
+
+    /**
      * @param  string  $jwt
      * @return string
      */
@@ -218,24 +251,17 @@ class Epicuros
 
         if ($this->getAlgorithm() === 'RS256') {
             try {
-                return file_get_contents(storage_path($key));
+                $key = file_get_contents(storage_path($key));
             } catch (\Exception $e) {
-                throw new SigningKeyNotFoundException();
+                $key = null;
             }
         }
 
-        return $key ?? null;
-    }
+        if (is_null($key)) {
+            throw new SigningKeyNotFoundException();
+        }
 
-    /**
-     * Get the issuer of the JWT token.
-     *
-     * @param  string  $jwt
-     * @return string|null
-     */
-    public function getIssuer(string $jwt) : ?string
-    {
-        return $this->getClaims($jwt)->iss ?? null;
+        return $key;
     }
 
     /**
@@ -247,20 +273,48 @@ class Epicuros
     }
 
     /**
+     * Get the issuer of the JWT token.
+     *
      * @param  string  $jwt
-     * @return object|null
+     * @return string|null
      */
-    public function getHeader(string $jwt)
+    public function getTokenIssuer(string $jwt) : ?string
     {
-        return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[0]));
+        return $this->getTokenClaims($jwt)->iss ?? null;
     }
 
     /**
      * @param  string  $jwt
      * @return object|null
      */
-    public function getClaims(string $jwt)
+    public function getTokenHeader(string $jwt)
     {
-        return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[1]));
+        return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[0] ?? null));
+    }
+
+    /**
+     * @param  string  $jwt
+     * @return object|null
+     */
+    public function getTokenClaims(string $jwt)
+    {
+        return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[1] ?? null));
+    }
+
+    /**
+     * @param  string  $jwt
+     * @return string|null
+     */
+    public function getTokenSignature(string $jwt) : ?string
+    {
+        return JWT::urlsafeB64Decode(explode('.', $jwt)[2] ?? null);
+    }
+
+    /**
+     * @return string
+     */
+    protected function generateUuid() : string
+    {
+        return Uuid::uuid4()->toString();
     }
 }

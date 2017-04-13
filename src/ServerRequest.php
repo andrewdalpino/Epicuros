@@ -10,15 +10,6 @@ class ServerRequest extends GuzzleRequest
     const HTTPS_PREFIX = 'https://';
 
     /**
-     * The allowed HTTP methods.
-     *
-     * @var  array  $allowedMethods
-     */
-    protected $allowedMethods = [
-        'GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'HEAD',
-    ];
-
-    /**
      * The address of the server.
      *
      * @var  string  $server
@@ -37,16 +28,12 @@ class ServerRequest extends GuzzleRequest
      *
      * @var  array  $params
      */
-    protected $params = [
-        //
-    ];
+    protected $params;
 
     /**
      * @var  array  $includes
      */
-    protected $includes = [
-        //
-    ];
+    protected $includes;
 
     /**
      * @var  Context  $context
@@ -64,6 +51,15 @@ class ServerRequest extends GuzzleRequest
      * @var  bool  $secure
      */
     protected $secure;
+
+    /**
+     * The allowed HTTP methods.
+     *
+     * @var  array  $allowedMethods
+     */
+    protected $allowedMethods = [
+        'GET', 'PUT', 'POST', 'DELETE', 'PATCH', 'HEAD',
+    ];
 
     /**
      * Constructor.
