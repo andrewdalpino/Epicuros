@@ -4,16 +4,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Issuer Identifier
+    | Service Identifier
     |--------------------------------------------------------------------------
     |
-    | This is the unique identifier of your api. This value will be used
-    | by the server to locate your RSA public key.
+    | This is the unique identifier of your service. This value will be
+    | used by the server to locate the appropriate verification key and
+    | to determine if it is the intended audience for the request.
     |
-    | Default: Your Laravel app name
+    | Default: 'Epicuros',
     */
 
-    'issuer' => config('app.name', 'Epicuros'),
+    'service' => config('app.name', 'Epicuros'),
 
     /*
     |--------------------------------------------------------------------------

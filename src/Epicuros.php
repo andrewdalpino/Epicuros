@@ -14,11 +14,11 @@ class Epicuros
     const BEARER_PREFIX = 'Bearer ';
 
     /**
-     * The identifier of the token issuer.
+     * The identifier of the service.
      *
-     * @var  string  $issuer
+     * @var  string  $service
      */
-    protected $issuer;
+    protected $service;
 
     /**
      * The key used to sign tokens.
@@ -42,11 +42,11 @@ class Epicuros
     protected $expire;
 
     /**
-     * The public/shared key mappings of all the services.
+     * The verifying key maps.
      *
-     * @var  array  $publicKeys
+     * @var  array  $verifyingKeys
      */
-    protected $publicKeys = [
+    protected $verifyingKeys = [
         //
     ];
 
@@ -62,20 +62,20 @@ class Epicuros
     /**
      * Constructor.
      *
-     * @param  string  $issuer
+     * @param  string  $service
      * @param  string  $key
      * @param  string  $algorithm
      * @param  int  $expire
      * @param  array  $publicKeys
      * @return void
      */
-    public function __construct(string $issuer, string $key, string $algorithm, int $expire, array $publicKeys = [])
+    public function __construct(string $service, string $key, string $algorithm, int $expire, array $publicKeys = [])
     {
         if (! in_array($algorithm, $this->allowedAlgorithms)) {
             throw new InvalidSigningAlgorithmException();
         }
 
-        $this->issuer = $issuer;
+        $this->service = $service;
         $this->key = $key;
         $this->algorithm = $algorithm;
         $this->expire = $expire;
@@ -97,9 +97,10 @@ class Epicuros
      * Return a signed JWT.
      *
      * @param  Context|null  $context
+     * @param  array  $audience
      * @return string
      */
-    public function generateToken(Context $context = null) : string
+    public function generateToken(Context $context = null, ...$audience) : string
     {
         $claims = [
             'jti' => $this->generateRandomUuid(),
@@ -108,8 +109,12 @@ class Epicuros
             'iat' => time(),
         ];
 
+        if (! empty($audience)) {
+            $claims['aud'] = $audience;
+        }
+
         if (! is_null($context)) {
-            $claims = array_merge($claims, $context->toArray());
+            $claims = array_merge($context->toArray(), $claims);
         }
 
         return JWT::encode($claims, $this->key, $this->algorithm);
@@ -123,13 +128,19 @@ class Epicuros
      */
     public function authorize(string $jwt = null)
     {
-        if (is_null($jwt)) {
-            throw new InvalidTokenException();
-        }
-
-        $key = $this->getVerifyingKey($jwt);
-
         try {
+            if (is_null($jwt)) {
+                throw new InvalidTokenException();
+            }
+
+            $audience = $this->getTokenAudience($jwt);
+
+            if (! empty($audience) && ! in_array($this->service, $audience)) {
+                throw new NotIntendedAudienceException();
+            }
+
+            $key = $this->getVerifyingKey($jwt);
+
             $claims = JWT::decode($jwt, $key, [$this->algorithm]);
         } catch (\Exception $e) {
             throw new ServerUnauthorizedException();
@@ -144,7 +155,7 @@ class Epicuros
      * @param  stdClass  $claims
      * @return Context
      */
-    public function acquireContext($claims)
+    protected function acquireContext($claims)
     {
         return Context::reconstitute((array) $claims);
     }
@@ -153,67 +164,71 @@ class Epicuros
      * @param  string  $jwt
      * @return string
      */
-    public function getVerifyingKey(string $jwt) : string
+    protected function getVerifyingKey(string $jwt) : string
     {
         $issuer = $this->getTokenIssuer($jwt);
 
-        foreach ($this->publicKeys as $name => $key) {
-            if ($name === $issuer) {
-                $verifyingKey = $key;
+        foreach ($this->verifyingKeys as $service => $verifyingKey) {
+            if ($service === $issuer) {
+                $key = $verifyingKey;
             }
         }
 
         if ($this->algorithm === 'RS256') {
             try {
-                $verifyingKey = file_get_contents(storage_path($verifyingKey));
+                $key = file_get_contents(storage_path($key));
             } catch (\Exception $e) {
-                $verifyingKey = null;
+                $key = null;
             }
         }
 
-        if (! isset($verifyingKey) || empty($verifyingKey)) {
+        if (! isset($key) || empty($key)) {
             throw new VerifyingKeyNotFoundException();
         }
 
-        return $verifyingKey;
+        return $key;
     }
 
     /**
-     * Get the issuer of the JWT token.
+     * Get the issuer of the token.
      *
      * @param  string  $jwt
      * @return string|null
      */
-    public function getTokenIssuer(string $jwt) : ?string
+    protected function getTokenIssuer(string $jwt) : ?string
     {
         return $this->getTokenClaims($jwt)->iss ?? null;
     }
 
     /**
+     * Does the token have an audience?
+     *
      * @param  string  $jwt
-     * @return object|null
+     * @return bool
      */
-    public function getTokenHeader(string $jwt)
+    protected function hasAudience(string $jwt) : bool
     {
-        return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[0] ?? null));
+        return ! empty($this->getTokenAudience($jwt)) ? true : false;
+    }
+
+    /**
+     * Get the intended audience of the token.
+     *
+     * @param  string  $jwt
+     * @return array
+     */
+    protected function getTokenAudience(string $jwt) : array
+    {
+        return $this->getTokenClaims($jwt)->aud ?? [];
     }
 
     /**
      * @param  string  $jwt
      * @return object|null
      */
-    public function getTokenClaims(string $jwt)
+    protected function getTokenClaims(string $jwt)
     {
         return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[1] ?? null));
-    }
-
-    /**
-     * @param  string  $jwt
-     * @return string|null
-     */
-    public function getTokenSignature(string $jwt) : ?string
-    {
-        return JWT::urlsafeB64Decode(explode('.', $jwt)[2] ?? null);
     }
 
     /**

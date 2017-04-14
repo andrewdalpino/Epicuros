@@ -55,7 +55,7 @@ class EpicurosServiceProvider extends ServiceProvider
 
         $this->app->singleton(Epicuros::class, function () use ($key) {
             return new Epicuros(
-                config('epicuros.issuer', 'Epicuros'),
+                config('epicuros.service', 'Epicuros'),
                 $key,
                 config('epicuros.algorithm', 'RS256'),
                 config('epicuros.token_expire', 60),

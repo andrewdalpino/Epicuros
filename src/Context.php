@@ -63,17 +63,6 @@ class Context implements JsonSerializable
     }
 
     /**
-     * @param  array  $audience
-     * @return self
-     */
-    public function withAudience(...$audience)
-    {
-        $this->claims['aud'] = $audience;
-
-        return $this;
-    }
-
-    /**
      * @param  string  $ip
      * @return self
      */
@@ -133,14 +122,6 @@ class Context implements JsonSerializable
     public function getSubject() : ?string
     {
         return $this->claims['sub'] ?? null;
-    }
-
-    /**
-     * @return array
-     */
-    public function getAudience() : array
-    {
-        return $this->claims['aud'] ?? [];
     }
 
     /**
