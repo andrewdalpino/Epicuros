@@ -4,13 +4,13 @@ namespace AndrewDalpino\Epicuros\Exceptions;
 
 use Exception;
 
-class ServiceUnauthorizedException extends Exception
+class VerifyingKeyNotFoundException extends Exception
 {
     /**
      * Constructor.
      */
     public function __construct()
     {
-        parent::__construct('Could not verify signature.');
+        parent::__construct('Verifying key not found.');
     }
 }

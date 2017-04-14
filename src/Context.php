@@ -7,11 +7,11 @@ use JsonSerializable;
 class Context implements JsonSerializable
 {
     /**
-     * The viewer identifier.
+     * The subject/viewer identifier.
      *
-     * @var  string  $viewerId
+     * @var  string  $sub
      */
-    protected $viewerId;
+    protected $sub;
 
     /**
      * The scopes granted to the client.
@@ -42,22 +42,58 @@ class Context implements JsonSerializable
     protected $ip;
 
     /**
+     * Any additional claims.
+     *
+     * @var  array  $claims
+     */
+    protected $claims = [
+        //
+    ];
+
+    /**
+     * @param  string|null  $sub
+     * @param  array|null  $scopes
+     * @param  array|null  $permissions
+     * @param  bool|null  $verified
+     * @param  string|null  $ip
+     * @return self
+     */
+
+    public static function build(string $sub = null, array $scopes = [], array $permissions = [], bool $verified = null, string $ip = null)
+    {
+        return new self($sub, $scopes, $permissions, $verified, $ip);
+    }
+
+    /**
      * Constructor.
      *
-     * @param  string|null  $viewerId
+     * @param  string|null  $sub
      * @param  array|null  $scopes
      * @param  array|null  $permissions
      * @param  bool|null  $verified
      * @param  string|null  $ip
      * @return void
      */
-    public function __construct(string $viewerId =  null, array $scopes = [], array $permissions = [], bool $verified = null, string $ip = null)
+    public function __construct(string $sub = null, array $scopes = [], array $permissions = [], bool $verified = null, string $ip = null)
     {
-        $this->viewerId = $viewerId;
+        $this->sub = $sub;
         $this->scopes = $scopes;
         $this->permissions = $permissions;
         $this->verified = $verified;
         $this->ip = $ip;
+    }
+
+    /**
+     * Include any additional custom claims.
+     *
+     * @param  array  $claims
+     * @return self
+     */
+    public function withClaims(array $claims)
+    {
+        $this->claims = array_merge($claims, $this->claims);
+
+        return $this;
     }
 
     /**
@@ -85,9 +121,17 @@ class Context implements JsonSerializable
     /**
      * @return string
      */
-    public function getViewerId() : ?string
+    public function getSub() : ?string
     {
-        return $this->viewerId;
+        return $this->sub;
+    }
+
+    /**
+     * @return string
+     */
+    public function getViewer() : ?string
+    {
+        return $this->getSub();
     }
 
     /**
@@ -125,15 +169,23 @@ class Context implements JsonSerializable
     /**
      * @return array
      */
+    public function getClaims() : ?array
+    {
+        return $this->claims;
+    }
+
+    /**
+     * @return array
+     */
     public function toArray() : array
     {
-        return [
-            'viewerId' => $this->getViewerId(),
+        return array_merge([
+            'sub' => $this->getSub(),
             'scopes' => $this->getScopes(),
             'permissions' => $this->getPermissions(),
             'verified' => $this->getVerified(),
             'ip' => $this->getIp(),
-        ];
+        ], $this->getClaims());
     }
 
     /**

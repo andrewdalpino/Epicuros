@@ -4,18 +4,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Client Name
+    | Issuer Identifier
     |--------------------------------------------------------------------------
     |
-    | This is the unique name of your service for the purposes of
-    | identifying itself to the server. In a private/public key
-    | configuration, this value will be used to locate the public
-    | key on the server side.
+    | This is the unique identifier of your api. This value will be used
+    | by the server to locate your public key.
     |
     | Default: Your Laravel app name
     */
 
-    'client_name' => config('app.name', 'Epicuros'),
+    'issuer' => config('app.name', 'Epicuros'),
 
     /*
     |--------------------------------------------------------------------------
@@ -77,68 +75,5 @@ return [
     'key_mappings' => [
         //
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Async Concurrency
-    |--------------------------------------------------------------------------
-    |
-    | This setting defines the maximum number of cuncurrent connections
-    | to keep open at the same time. Multiple connections have an impact
-    | on performance, however too many connections can overload the server.
-    |
-    | Default: 5
-    */
-
-    'async_concurrency' = 5,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Request Timeout
-    |--------------------------------------------------------------------------
-    |
-    | The float in seconds to wait before a request times out. In general,
-    | it is best to keep this value low. If you experience alot of timeouts,
-    | and you are sure your servies are healthy, then increase this value.
-    |
-    | Default: 3.2
-    */
-
-    'request_timeout' = 3.2,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Request Headers
-    |--------------------------------------------------------------------------
-    |
-    | You may specify any headers you would like to send with each request.
-    | It is generally best to specify at least the 'Content-Type', and
-    | 'Accept' headers by default.
-    |
-    | Default:
-    |
-    | 'User-Agent' => config('app.name', 'Epicuros'),
-    | 'Content-Type' => 'application/json',
-    | 'Accept' => 'application/json',
-    |
-    */
-
-    'headers' => [
-        'User-Agent' => config('app.name', 'Epicuros'),
-        'Content-Type' => 'application/vnd.api+json',
-        'Accept' => 'application/vnd.api+json',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | HTTP Version
-    |--------------------------------------------------------------------------
-    |
-    | The version of the HTTP protocol to use.
-    |
-    | Default: '1.1',
-    */
-   
-    'http_version' => '1.1',
 
 ];

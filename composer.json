@@ -1,8 +1,8 @@
 {
     "name": "andrewdalpino/epicuros",
-    "description": "A client library for secure communication with JSON API based REST microservices designed for Laravel and Lumen.",
+    "description": "A tool that provides JWT authentication and secure context transfer between Laravel and Lumen microservices.",
     "license": "MIT",
-    "keywords": ["laravel", "lumen", "api", "json", "client", "microservices", "async"],
+    "keywords": ["laravel", "lumen", "api", "jwt", "authorization", "microservices", "async"],
     "authors": [
         {
             "name": "Andrew DalPino",
@@ -12,10 +12,8 @@
     "require": {
         "php": ">=7.0.0",
         "firebase/php-jwt": "^4.0",
-        "guzzlehttp/guzzle": "^6.2",
         "illuminate/support": ">=5.2",
         "phpseclib/phpseclib": "^2.0",
-        "psr/http-message": "^1.0",
         "ramsey/uuid": "^3.0"
     },
     "require-dev": {

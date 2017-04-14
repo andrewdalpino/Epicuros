@@ -54,13 +54,10 @@ class EpicurosServiceProvider extends ServiceProvider
 
         $this->app->singleton(Epicuros::class, function () use ($key) {
             return new Epicuros(
-                new GuzzleClient([
-                    'version' => config('epicuros.http_version', '1.1'),
-                    'headers' => config('epicuros.headers', []),
-                    'timeout' => config('epicuros.request_timeout', 0),
-                ]),
+                config('epicuros.issuer', 'Epicuros'),
                 $key,
                 config('epicuros.algorithm', 'RS256'),
+                config('epicuros.token_expire', 60),
                 config('epicuros.key_mappings', [])
             );
         });
