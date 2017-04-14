@@ -169,7 +169,7 @@ class Epicuros
             }
         }
 
-        if ($this->getAlgorithm() === 'RS256' && is_file(storage_path($key))) {
+        if ($this->algorithm === 'RS256' && is_file(storage_path($key))) {
             try {
                 $key = file_get_contents(storage_path($key));
             } catch (\Exception $e) {
