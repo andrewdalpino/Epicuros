@@ -104,7 +104,7 @@ class Epicuros
     {
         $claims = [
             'jti' => $this->generateRandomUuid(),
-            'iss' => $this->issuer,
+            'iss' => $this->service,
             'exp' => time() + (int) $this->expire,
             'iat' => time(),
         ];
