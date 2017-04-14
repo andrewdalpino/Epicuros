@@ -144,7 +144,7 @@ class Epicuros
      * @param  stdClass  $claims
      * @return Context
      */
-    public function acquireContext(stdClass $claims)
+    public function acquireContext($claims)
     {
         return new Context(
             $claims->sub ?? null,
