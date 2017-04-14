@@ -139,20 +139,14 @@ class Epicuros
     }
 
     /**
-     * Acquire the context from the current claims.
+     * Acquire the context from claims.
      *
      * @param  stdClass  $claims
      * @return Context
      */
     public function acquireContext($claims)
     {
-        return new Context(
-            $claims->sub ?? null,
-            $claims->scopes ?? [],
-            $claims->permissions ?? [],
-            $claims->verified ?? false,
-            $claims->ip ?? null
-        );
+        return Context::reconstitute((array) $claims);
     }
 
     /**
@@ -169,7 +163,7 @@ class Epicuros
             }
         }
 
-        if ($this->algorithm === 'RS256' && is_file(storage_path($verifyingKey))) {
+        if ($this->algorithm === 'RS256') {
             try {
                 $verifyingKey = file_get_contents(storage_path($verifyingKey));
             } catch (\Exception $e) {

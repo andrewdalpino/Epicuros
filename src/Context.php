@@ -8,41 +8,6 @@ use JsonSerializable;
 class Context implements JsonSerializable
 {
     use MagicGetters;
-    
-    /**
-     * The subject/viewer identifier.
-     *
-     * @var  string  $sub
-     */
-    protected $sub;
-
-    /**
-     * The scopes granted to the client.
-     *
-     * @var  array  $scopes
-     */
-    protected $scopes;
-
-    /**
-     * The permissions granted to a user.
-     *
-     * @var  array  $permissions
-     */
-    protected $permissions;
-
-    /**
-     * Is the identity of the viewer verified?
-     *
-     * @param  bool  $verified
-     */
-    protected $verified;
-
-    /**
-     * The IP address of the client.
-     *
-     * @var  string  $ip
-     */
-    protected $ip;
 
     /**
      * Any additional claims.
@@ -54,47 +19,80 @@ class Context implements JsonSerializable
     ];
 
     /**
-     * @param  string|null  $sub
+     * @param  string|null  $subject
      * @param  array|null  $scopes
      * @param  array|null  $permissions
      * @param  bool|null  $verified
-     * @param  string|null  $ip
      * @return self
      */
 
-    public static function build(string $sub = null, array $scopes = [], array $permissions = [], bool $verified = null, string $ip = null)
+    public static function build(string $subject = null, array $scopes = [], array $permissions = [], bool $verified = null)
     {
-        return new self($sub, $scopes, $permissions, $verified, $ip);
+        return new self($subject, $scopes, $permissions, $verified);
+    }
+
+    /**
+     * Reconstiute the context from claims.
+     *
+     * @param  array  $claims
+     * @return self
+     */
+    public static function reconstitute(array $claims)
+    {
+        $context = new self();
+
+        return $context->withClaims($claims);
     }
 
     /**
      * Constructor.
      *
-     * @param  string|null  $sub
+     * @param  string|null  $subject
      * @param  array|null  $scopes
      * @param  array|null  $permissions
      * @param  bool|null  $verified
      * @param  string|null  $ip
      * @return void
      */
-    public function __construct(string $sub = null, array $scopes = [], array $permissions = [], bool $verified = null, string $ip = null)
+    public function __construct(string $subject = null, array $scopes = [], array $permissions = [], bool $verified = null)
     {
-        $this->sub = $sub;
-        $this->scopes = $scopes;
-        $this->permissions = $permissions;
-        $this->verified = $verified;
-        $this->ip = $ip;
+        $this->claims['sub'] = $subject;
+        $this->claims['scopes'] = $scopes;
+        $this->claims['permissions'] = $permissions;
+        $this->claims['verified'] = $verified;
     }
 
     /**
-     * Include any additional custom claims.
+     * @param  array  $audience
+     * @return self
+     */
+    public function withAudience(...$audience)
+    {
+        $this->claims['aud'] = $audience;
+
+        return $this;
+    }
+
+    /**
+     * @param  string  $ip
+     * @return self
+     */
+    public function withIp(string $ip)
+    {
+        $this->claims['ip'] = $ip;
+
+        return $this;
+    }
+
+    /**
+     * Include any custom claims.
      *
      * @param  array  $claims
      * @return self
      */
     public function withClaims(array $claims)
     {
-        $this->claims = array_merge($claims, $this->claims);
+        $this->claims = array_merge($this->claims, $claims);
 
         return $this;
     }
@@ -107,7 +105,7 @@ class Context implements JsonSerializable
      */
     public function hasScope(string $scope) : bool
     {
-        return in_array($scope, $this->scopes);
+        return in_array($scope, $this->claims['scopes']);
     }
 
     /**
@@ -118,31 +116,31 @@ class Context implements JsonSerializable
      */
     public function hasPermission(string $permission) : bool
     {
-        return in_array($permission, $this->permissions);
+        return in_array($permission, $this->claims['permissions']);
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getSub() : ?string
+    public function getViewerId() : ?string
     {
-        return $this->sub;
+        return $this->getSubject();
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getViewer() : ?string
+    public function getSubject() : ?string
     {
-        return $this->getSub();
+        return $this->claims['sub'] ?? null;
     }
 
     /**
      * @return array
      */
-    public function getPermissions() : array
+    public function getAudience() : array
     {
-        return $this->permissions;
+        return $this->claims['aud'] ?? [];
     }
 
     /**
@@ -150,31 +148,31 @@ class Context implements JsonSerializable
      */
     public function getScopes() : array
     {
-        return $this->scopes;
-    }
-
-    /*
-     * @return boolean
-     */
-    public function getVerified() : ?bool
-    {
-        return $this->verified;
-    }
-
-    /**
-     * @return string
-     */
-    public function getIp() : ?string
-    {
-        return $this->ip;
+        return $this->claims['scopes'] ?? [];
     }
 
     /**
      * @return array
      */
-    public function getClaims() : ?array
+    public function getPermissions() : array
     {
-        return $this->claims;
+        return $this->claims['permissions'] ?? [];
+    }
+
+    /**
+     * @return bool|null
+     */
+    public function getVerified() : ?bool
+    {
+        return $this->claims['verified'] ?? null;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getIp() : ?string
+    {
+        return $this->claims['ip'] ?? null;
     }
 
     /**
@@ -182,13 +180,7 @@ class Context implements JsonSerializable
      */
     public function toArray() : array
     {
-        return array_merge([
-            'sub' => $this->getSub(),
-            'scopes' => $this->getScopes(),
-            'permissions' => $this->getPermissions(),
-            'verified' => $this->getVerified(),
-            'ip' => $this->getIp(),
-        ], $this->getClaims());
+        return $this->claims ?? [];
     }
 
     /**
