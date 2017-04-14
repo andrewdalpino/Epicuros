@@ -163,25 +163,25 @@ class Epicuros
     {
         $issuer = $this->getTokenIssuer($jwt);
 
-        foreach ($this->publicKeys as $name => $publicKey) {
+        foreach ($this->publicKeys as $name => $key) {
             if ($name === $issuer) {
-                $key = $publicKey;
+                $verifyingKey = $key;
             }
         }
 
-        if ($this->algorithm === 'RS256' && is_file(storage_path($key))) {
+        if ($this->algorithm === 'RS256' && is_file(storage_path($verifyingKey))) {
             try {
-                $key = file_get_contents(storage_path($key));
+                $verifyingKey = file_get_contents(storage_path($verifyingKey));
             } catch (\Exception $e) {
-                $key = null;
+                $verifyingKey = null;
             }
         }
 
-        if (! isset($key) || empty($key)) {
+        if (! isset($verifyingKey) || empty($verifyingKey)) {
             throw new VerifyingKeyNotFoundException();
         }
 
-        return $key;
+        return $verifyingKey;
     }
 
     /**

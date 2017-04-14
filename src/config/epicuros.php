@@ -17,7 +17,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | JWT Signing Algrithm
+    | Token Signing Algrithm
     |--------------------------------------------------------------------------
     |
     | The algorithm to use when signing a JWT. Possible values are 'RS256'
@@ -39,8 +39,8 @@ return [
     | or the shared key in a shared secret scenario.
     |
     | Default: none
-    | Example: '/certs/epicuros-private.key',
-    | Example: '6a628a71c4bc2c76048949a72ef9ac0d35d0dc5f3...s',
+    | Example: '/certs/foo-private.key',
+    | Example: '6a628a71c4bc2c76048949a72ef9ac0d35d0dc5f3...',
     */
 
     'signing_key' => '',
@@ -48,10 +48,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Token Expire
+    | Key Mappings
     |--------------------------------------------------------------------------
     |
-    | The length in seconds that a signed JWT is valid for. It is
+    | These are the mappings of services to their respective RSA public
+    | keys or shared secrets. The array key is the name of the token issuer,
+    | and the value is either the path to its public key from the local
+    | storage folder or the shared secret.
+    |
+    | Default: none
+    | Example: 'foo' => '/certs/foo-public.key',
+    | Example: 'bar' => '6a628a71c4bc2c76048949a72ef9ac0d35d0dc5f3...',
+    */
+
+    'key_mappings' => [
+        //
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Token Expiry
+    |--------------------------------------------------------------------------
+    |
+    | The time in seconds that a signed token is valid for. It is
     | generally a best practice to keep the life of these tokens
     | to a minimum for security purposes.
     |
@@ -59,22 +78,5 @@ return [
     */
 
     'token_expire' => 30,
-
-    /*
-    |--------------------------------------------------------------------------
-    | RSA Public Key Mappings
-    |--------------------------------------------------------------------------
-    |
-    | These are the mappings of services to their respective RSA public
-    | keys. The array key is the name of the token issuer, and the value
-    | is the path to its public key from the local storage folder.
-    |
-    | Default: none
-    | Example: 'foo' => '/certs/foo-public.key',
-    */
-
-    'public_key_mappings' => [
-        //
-    ],
 
 ];
