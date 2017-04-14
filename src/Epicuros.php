@@ -66,10 +66,10 @@ class Epicuros
      * @param  string  $key
      * @param  string  $algorithm
      * @param  int  $expire
-     * @param  array  $publicKeys
+     * @param  array  $verifyingKeys
      * @return void
      */
-    public function __construct(string $service, string $key, string $algorithm, int $expire, array $publicKeys = [])
+    public function __construct(string $service, string $key, string $algorithm, int $expire, array $verifyingKeys = [])
     {
         if (! in_array($algorithm, $this->allowedAlgorithms)) {
             throw new InvalidSigningAlgorithmException();
@@ -79,7 +79,7 @@ class Epicuros
         $this->key = $key;
         $this->algorithm = $algorithm;
         $this->expire = $expire;
-        $this->publicKeys = $publicKeys;
+        $this->verifyingKeys = $verifyingKeys;
     }
 
     /**
@@ -128,7 +128,7 @@ class Epicuros
      */
     public function authorize(string $jwt = null)
     {
-        try {
+        // try {
             if (is_null($jwt)) {
                 throw new InvalidTokenException();
             }
@@ -142,9 +142,9 @@ class Epicuros
             $key = $this->getVerifyingKey($jwt);
 
             $claims = JWT::decode($jwt, $key, [$this->algorithm]);
-        } catch (\Exception $e) {
-            throw new ServerUnauthorizedException();
-        }
+        // } catch (\Exception $e) {
+        //     throw new ServerUnauthorizedException();
+        // }
 
         return $this->acquireContext($claims);
     }
