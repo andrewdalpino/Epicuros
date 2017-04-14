@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This is the unique identifier of your api. This value will be used
-    | by the server to locate your public key.
+    | by the server to locate your RSA public key.
     |
     | Default: Your Laravel app name
     */
@@ -21,8 +21,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | The algorithm to use when signing a JWT. Possible values are 'RS256'
-    | for asychnonous (private/public) keys, and 'HS256', 'HS384', and
-    | 'HS512' for shared key.
+    | for asychnonous (private/public) keys, or 'HS256', 'HS384', and
+    | 'HS512' for shared secret.
     |
     | Default: 'HS512'
     */
@@ -36,7 +36,7 @@ return [
     |
     | This is either the path to the service's private key from the
     | local storage folder in an asymetrical sign/verify configuration,
-    | or the shared key in a shared key scenario.
+    | or the shared key in a shared secret scenario.
     |
     | Default: none
     | Example: '/certs/epicuros-private.key',

@@ -4,7 +4,7 @@ namespace AndrewDalpino\Epicuros;
 
 use Illuminate\Console\Command;
 
-class GenerateSharedKey extends Command
+class GenerateSharedSecret extends Command
 {
     /**
      * The name and signature of the console command.
@@ -18,7 +18,7 @@ class GenerateSharedKey extends Command
      *
      * @var string
      */
-    protected $description = 'Generate a shared key for token signing and verifying.';
+    protected $description = 'Generate a shared secret for token signing and verifying.';
 
     /**
      * Constructor.
