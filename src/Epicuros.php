@@ -128,7 +128,7 @@ class Epicuros
      */
     public function authorize(string $jwt = null)
     {
-        // try {
+        try {
             if (is_null($jwt)) {
                 throw new InvalidTokenException();
             }
@@ -142,9 +142,9 @@ class Epicuros
             $key = $this->getVerifyingKey($jwt);
 
             $claims = JWT::decode($jwt, $key, [$this->algorithm]);
-        // } catch (\Exception $e) {
-        //     throw new ServerUnauthorizedException();
-        // }
+        } catch (\Exception $e) {
+            throw new ServerUnauthorizedException();
+        }
 
         return $this->acquireContext($claims);
     }
