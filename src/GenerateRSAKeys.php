@@ -8,25 +8,23 @@ use Illuminate\Support\Str;
 
 class GenerateRSAKeys extends Command
 {
-    const STORAGE_FOLDER = 'certs/';
     const FOLDER_UMASK = 0755;
     const PRIVATE_KEY_SUFFIX = '-private.key';
     const PUBLIC_KEY_SUFFIX = '-public.key';
-    const RSA_BITS = 4096;
 
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'epicuros:generate:keys {name=epicuros} {--force}';
+    protected $signature = 'epicuros:generate:rsa {name=epicuros} {folder=/certs} {bits=4096} {--force}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Generate RSA keys for JWT signing and verifying.';
+    protected $description = 'Generate RSA keys for token signing and verifying.';
 
     /**
      * The RSA implementation.
@@ -36,8 +34,9 @@ class GenerateRSAKeys extends Command
     protected $rsa;
 
     /**
-     * Create a new command instance.
+     * Constructor.
      *
+     * @param  \phpseclib\Crypt\RSA  $rsa
      * @return void
      */
     public function __construct(RSA $rsa)
@@ -54,14 +53,18 @@ class GenerateRSAKeys extends Command
      */
     public function handle()
     {
-        $folder = storage_path(self::STORAGE_FOLDER);
+        $name = str_replace(' ', '-', $this->argument('name'));
+
+        $folder = storage_path($this->argument('folder')) . '/';
+
+        $bits = intval($this->argument('bits'));
 
         if (! file_exists($folder)) {
             mkdir($folder, self::FOLDER_UMASK, true);
         }
 
-        $path['private'] = $folder . Str::slug($this->argument('name')) . self::PRIVATE_KEY_SUFFIX;
-        $path['public'] = $folder . Str::slug($this->argument('name')) . self::PUBLIC_KEY_SUFFIX;
+        $path['private'] = $folder . $name . self::PRIVATE_KEY_SUFFIX;
+        $path['public'] = $folder . $name . self::PUBLIC_KEY_SUFFIX;
 
         if (! $this->option('force')) {
             if (file_exists($path['private']) || file_exists($path['public'])) {
@@ -70,11 +73,11 @@ class GenerateRSAKeys extends Command
             }
         }
 
-        $keys = $this->rsa->createKey(self::RSA_BITS);
+        $keys = $this->rsa->createKey($bits);
 
         file_put_contents($path['private'], $keys['privatekey']);
         file_put_contents($path['public'], $keys['publickey']);
 
-        $this->info(self::RSA_BITS . 'bit RSA keys generated successfully in ' . storage_path(self::STORAGE_FOLDER) . '.');
+        $this->info($bits . ' bit RSA keys generated successfully in ' . $folder . '.');
     }
 }

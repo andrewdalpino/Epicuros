@@ -2,10 +2,13 @@
 
 namespace AndrewDalpino\Epicuros;
 
+use AndrewDalpino\Epicuros\Traits\MagicGetters;
 use JsonSerializable;
 
 class Context implements JsonSerializable
 {
+    use MagicGetters;
+    
     /**
      * The subject/viewer identifier.
      *

@@ -24,6 +24,7 @@ class EpicurosServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
+                GenerateSharedKey::class,
                 GenerateRSAKeys::class,
             ]);
         }

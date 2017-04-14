@@ -21,8 +21,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | The algorithm to use when signing a JWT. Possible values are 'RS256'
-    | for OpenSSL asychnonous (private/public) keys, and 'HS256', 'HS384',
-    | and 'HS512' for HMAC shared key.
+    | for asychnonous (private/public) keys, and 'HS256', 'HS384', and
+    | 'HS512' for shared key.
     |
     | Default: 'RS256'
     */
@@ -34,14 +34,16 @@ return [
     | Signing Key
     |--------------------------------------------------------------------------
     |
-    | This is either the location of the private key in the
-    | storage path when using OpenSSL asymetrical cryptography,
-    | or the shared key when using HMAC.
+    | This is either the path to the service's private key from the
+    | local storage folder in an asymetrical sign/verify configuration,
+    | or the shared key in a shared key scenario.
     |
-    | Default: '/certs/epicuros-private.key',
+    | Default: none
+    | Example: '/certs/epicuros-private.key',
+    | Example: '6a628a71c4bc2c76048949a72ef9ac0d35d0dc5f3...s',
     */
 
-    'signing_key' => '/certs/epicuros-private.key',
+    'signing_key' => '',
 
 
     /*
