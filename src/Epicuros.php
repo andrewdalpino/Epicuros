@@ -100,7 +100,7 @@ class Epicuros
      * @param  array  $audience
      * @return string
      */
-    public function generateToken(Context $context = null, ...$audience) : string
+    public function generateToken(Context $context = null) : string
     {
         $claims = [
             'jti' => $this->generateRandomUuid(),
@@ -108,10 +108,6 @@ class Epicuros
             'exp' => time() + (int) $this->expire,
             'iat' => time(),
         ];
-
-        if (! empty($audience)) {
-            $claims['aud'] = $audience;
-        }
 
         if (! is_null($context)) {
             $claims = array_merge($context->toArray(), $claims);
@@ -131,12 +127,6 @@ class Epicuros
         try {
             if (is_null($jwt)) {
                 throw new InvalidTokenException();
-            }
-
-            $audience = $this->getTokenAudience($jwt);
-
-            if (! empty($audience) && ! in_array($this->service, $audience)) {
-                throw new NotIntendedAudienceException();
             }
 
             $key = $this->getVerifyingKey($jwt);
@@ -198,28 +188,6 @@ class Epicuros
     protected function getTokenIssuer(string $jwt) : ?string
     {
         return $this->getTokenClaims($jwt)->iss ?? null;
-    }
-
-    /**
-     * Does the token have an audience?
-     *
-     * @param  string  $jwt
-     * @return bool
-     */
-    protected function hasAudience(string $jwt) : bool
-    {
-        return ! empty($this->getTokenAudience($jwt)) ? true : false;
-    }
-
-    /**
-     * Get the intended audience of the token.
-     *
-     * @param  string  $jwt
-     * @return array
-     */
-    protected function getTokenAudience(string $jwt) : array
-    {
-        return $this->getTokenClaims($jwt)->aud ?? [];
     }
 
     /**
