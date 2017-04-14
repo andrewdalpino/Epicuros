@@ -24,10 +24,10 @@ return [
     | for asychnonous (private/public) keys, and 'HS256', 'HS384', and
     | 'HS512' for shared key.
     |
-    | Default: 'RS256'
+    | Default: 'HS512'
     */
 
-    'algorithm' => 'RS256',
+    'algorithm' => 'HS512',
 
     /*
     |--------------------------------------------------------------------------
@@ -55,26 +55,25 @@ return [
     | generally a best practice to keep the life of these tokens
     | to a minimum for security purposes.
     |
-    | Default: 60,
+    | Default: 30,
     */
 
-    'token_expire' => 60,
+    'token_expire' => 30,
 
     /*
     |--------------------------------------------------------------------------
-    | Public Key Mappings
+    | RSA Public Key Mappings
     |--------------------------------------------------------------------------
     |
-    | These are the mappings of clients services to their public key.
-    | The array key is the client name, and the value is either a path
-    | to the RSA key from the local storage folder or a shared HMAC.
+    | These are the mappings of services to their respective RSA public
+    | keys. The array key is the name of the token issuer, and the value
+    | is the path to its public key from the local storage folder.
     |
     | Default: none
-    | Example: 'foo' => '/certs/client-public.key',
-    | Example: 'bar' => '8016870d16216dafc58718698bf0...',
+    | Example: 'foo' => '/certs/foo-public.key',
     */
 
-    'key_mappings' => [
+    'public_key_mappings' => [
         //
     ],
 
