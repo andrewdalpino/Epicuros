@@ -5,7 +5,7 @@ namespace AndrewDalpino\Epicuros\Middleware;
 use AndrewDalpino\Epicuros\Epicuros;
 use Closure;
 
-class AuthorizeService
+class AcquireContext
 {
     /**
      * @var  \AndrewDalpino\Epicuros\Epicuros  $epicuros
@@ -31,7 +31,11 @@ class AuthorizeService
      */
     public function handle($request, Closure $next)
     {
-        $this->epicuros->authorize($request->bearerToken());
+        $context = $this->epicuros->authorize($request->bearerToken());
+
+        $request->merge([
+            'context' => $context,
+        ]);
 
         return $next($request);
     }

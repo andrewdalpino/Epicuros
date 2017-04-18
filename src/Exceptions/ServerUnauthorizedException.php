@@ -11,6 +11,6 @@ class ServerUnauthorizedException extends Exception
      */
     public function __construct()
     {
-        parent::__construct('Could not verify server signature.');
+        parent::__construct('Could not verify the client signature.');
     }
 }
