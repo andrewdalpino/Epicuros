@@ -3,6 +3,7 @@
 namespace AndrewDalpino\Epicuros\Middleware;
 
 use AndrewDalpino\Epicuros\Epicuros;
+use AndrewDalpino\Epicuros\Context;
 use Closure;
 
 class AcquireContext
@@ -31,7 +32,11 @@ class AcquireContext
      */
     public function handle($request, Closure $next)
     {
-        $context = $this->epicuros->authorize($request->bearerToken());
+        try {
+            $context = $this->epicuros->authorize($request->bearerToken());
+        } catch (\Exception $e) {
+            $context = Context::build();
+        }
 
         $request->merge([
             'context' => $context,
