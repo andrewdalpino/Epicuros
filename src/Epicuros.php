@@ -2,10 +2,13 @@
 
 namespace AndrewDalpino\Epicuros;
 
+use AndrewDalpino\Epicuros\Exceptions\IncompatibleServerRequestException;
 use AndrewDalpino\Epicuros\Exceptions\InvalidTokenException;
 use AndrewDalpino\Epicuros\Exceptions\InvalidSigningAlgorithmException;
 use AndrewDalpino\Epicuros\Exceptions\VerifyingKeyNotFoundException;
 use AndrewDalpino\Epicuros\Exceptions\ServerUnauthorizedException;
+use Illuminate\Http\Request as LaravelRequest;
+use Psr\Http\Message\RequestInterface;
 use Ramsey\Uuid\Uuid;
 use Firebase\JWT\JWT;
 
@@ -119,19 +122,19 @@ class Epicuros
     /**
      * Verify the token and extract the claims.
      *
-     * @param  string  $jwt
+     * @param  mixed  $request
+     * @throws AndrewDalpino\Epicuros\InvalidTokenException
+     * @throws AndrewDalpino\Epicuros\ServerUnauthorizedException
      * @return Context
      */
-    public function authorize(string $jwt = null)
+    public function authorize($request)
     {
+        $bearer = $this->getBearerToken($request);
+
+        $key = $this->getVerifyingKey($bearer);
+
         try {
-            if (is_null($jwt)) {
-                throw new InvalidTokenException();
-            }
-
-            $key = $this->getVerifyingKey($jwt);
-
-            $claims = JWT::decode($jwt, $key, [$this->algorithm]);
+            $this->extractClaims($bearer, $key);
         } catch (\Exception $e) {
             throw new ServerUnauthorizedException();
         }
@@ -140,14 +143,32 @@ class Epicuros
     }
 
     /**
-     * Acquire the context from claims.
+     * Get the bearer token from the request headers.
      *
-     * @param  stdClass  $claims
-     * @return Context
+     * @param  mixed
+     * @throws AndrewDalpino\Epicuros\Exceptions\IncompatibleServerRequestException
+     * @throws AndrewDalpino\Epicuros\Exceptions\InvalidTokenException
+     * @return string
      */
-    protected function acquireContext($claims)
+    public function getBearerToken($request) : string
     {
-        return Context::reconstitute((array) $claims);
+        if ($request instanceof LaravelRequest) {
+            $authorization = $request->header('Authorization', '');
+        } else if ($request instanceof RequestInterface) {
+            $authorization = $request->getHeader('Authorization');
+        } else {
+            throw new IncompatibleServerRequestException();
+        }
+
+        $prefix = substr($authorization, 0, strlen(self::BEARER_PREFIX));
+
+        $token = substr($authorization, strlen(self::BEARER_PREFIX));
+
+        if ($prefix === self::BEARER_PREFIX) {
+            return $token;
+        }
+
+        throw new InvalidTokenException();
     }
 
     /**
@@ -177,6 +198,26 @@ class Epicuros
         }
 
         return $key;
+    }
+
+    /**
+     * @param  string  $jwt
+     * @param  string  $key
+     */
+    protected function extractClaims($jwt, $key)
+    {
+        return JWT::decode($jwt, $key, [$this->algorithm]);
+    }
+
+    /**
+     * Acquire the context from claims.
+     *
+     * @param  stdClass  $claims
+     * @return Context
+     */
+    protected function acquireContext($claims)
+    {
+        return Context::reconstitute((array) $claims);
     }
 
     /**

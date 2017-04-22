@@ -31,7 +31,7 @@ class AuthorizeService
      */
     public function handle($request, Closure $next)
     {
-        $this->epicuros->authorize($request->bearerToken());
+        $this->epicuros->authorize($request);
 
         return $next($request);
     }

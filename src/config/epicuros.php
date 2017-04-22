@@ -42,6 +42,7 @@ return [
     | Default: none
     | Example: '/certs/foo-private.key',
     | Example: '6a628a71c4bc2c76048949a72ef9ac0d35d0dc5f3...',
+    | Example: 'YourKey!',
     */
 
     'signing_key' => '',
@@ -60,6 +61,7 @@ return [
     | Default: none
     | Example: 'foo' => '/certs/foo-public.key',
     | Example: 'bar' => '6a628a71c4bc2c76048949a72ef9ac0d35d0dc5f3...',
+    | Example: 'baz' => 'TheirKey!',
     */
 
     'key_mappings' => [

@@ -2,7 +2,7 @@
     "name": "andrewdalpino/epicuros",
     "description": "A tool that provides JWT authentication and secure context transfer between Laravel and Lumen microservices.",
     "license": "MIT",
-    "keywords": ["laravel", "lumen", "api", "jwt", "authorization", "microservices", "async"],
+    "keywords": ["laravel", "lumen", "api", "jwt", "authorization", "microservices"],
     "authors": [
         {
             "name": "Andrew DalPino",
@@ -12,6 +12,7 @@
     "require": {
         "php": ">=7.0.0",
         "firebase/php-jwt": "^4.0",
+        "illuminate/http": ">=5.2",
         "illuminate/support": ">=5.2",
         "phpseclib/phpseclib": "^2.0",
         "ramsey/uuid": "^3.0"

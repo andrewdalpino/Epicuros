@@ -26,21 +26,23 @@ class AcquireContext
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  mixed  $request
      * @param  \Closure  $next
      * @return mixed
      */
     public function handle($request, Closure $next)
     {
         try {
-            $context = $this->epicuros->authorize($request->bearerToken());
+            $context = $this->epicuros->authorize($request);
         } catch (\Exception $e) {
             $context = Context::build();
         }
 
-        $request->merge([
-            'context' => $context,
-        ]);
+        if ($request instanceof LaravelRequest) {
+            $request->merge(['context' => $context]);
+        } else if ($request instanceof RequestInterface) {
+            $request->withAttribute('context', $context);
+        }
 
         return $next($request);
     }
