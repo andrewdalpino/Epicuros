@@ -2,6 +2,8 @@
 
 namespace AndrewDalpino\Epicuros\Middleware;
 
+use Illuminate\Http\Request as LaravelRequest;
+use Psr\Http\Message\RequestInterface;
 use AndrewDalpino\Epicuros\Epicuros;
 use AndrewDalpino\Epicuros\Context;
 use Closure;
