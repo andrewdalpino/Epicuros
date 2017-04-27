@@ -4,13 +4,13 @@ namespace AndrewDalpino\Epicuros\Exceptions;
 
 use Exception;
 
-class InvalidTokenException extends Exception
+class KeyNotFoundException extends Exception
 {
     /**
      * Constructor.
      */
     public function __construct()
     {
-        parent::__construct('Invalid token.');
+        parent::__construct('Key not found.');
     }
 }

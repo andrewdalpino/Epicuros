@@ -4,13 +4,13 @@ namespace AndrewDalpino\Epicuros\Exceptions;
 
 use Exception;
 
-class VerifyingKeyNotFoundException extends Exception
+class KeyRepositoryIsImmutableException extends Exception
 {
     /**
      * Constructor.
      */
     public function __construct()
     {
-        parent::__construct('Verifying key not found.');
+        parent::__construct('Cannot mutate the key repository once it has been instantiated.');
     }
 }

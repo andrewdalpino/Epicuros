@@ -2,56 +2,43 @@
 
 namespace AndrewDalpino\Epicuros;
 
-use AndrewDalpino\Epicuros\Exceptions\IncompatibleServerRequestException;
-use AndrewDalpino\Epicuros\Exceptions\InvalidTokenException;
 use AndrewDalpino\Epicuros\Exceptions\InvalidSigningAlgorithmException;
-use AndrewDalpino\Epicuros\Exceptions\VerifyingKeyNotFoundException;
-use AndrewDalpino\Epicuros\Exceptions\ServerUnauthorizedException;
-use Illuminate\Http\Request as LaravelRequest;
-use Psr\Http\Message\RequestInterface;
-use Ramsey\Uuid\Uuid;
+use AndrewDalpino\Epicuros\Exceptions\UnauthorizedException;
 use Firebase\JWT\JWT;
+use Ramsey\Uuid\Uuid;
 
 class Epicuros
 {
+    const DEFAULT_EXPIRY = 60; // In seconds.
     const BEARER_PREFIX = 'Bearer ';
 
     /**
-     * The identifier of the service.
-     *
-     * @var  string  $service
-     */
-    protected $service;
-
-    /**
-     * The key used to sign tokens.
-     *
-     * @var  string  $key
-     */
-    protected $key;
-
-    /**
-     * The algorithm to use when signing and verifying JWTs.
+     * The algorithm to use when signing tokens.
      *
      *  @var  string  $algorithm
      */
     protected $algorithm;
 
     /**
-     * The time in seconds before the token expires.
+     * The signing keys.
+     *
+     * @var  KeyRepository  $signingKeys
+     */
+    protected $signingKeys;
+
+    /**
+     * The verifying keys.
+     *
+     * @var  KeyRepository  $verifyingKeys
+     */
+    protected $verifyingKeys;
+
+    /**
+     * The token expiry.
      *
      * @var  int  $expire
      */
     protected $expire;
-
-    /**
-     * The verifying key maps.
-     *
-     * @var  array  $verifyingKeys
-     */
-    protected $verifyingKeys = [
-        //
-    ];
 
     /**
      * The allowed signing algorithms.
@@ -65,50 +52,54 @@ class Epicuros
     /**
      * Constructor.
      *
-     * @param  string  $service
-     * @param  string  $key
      * @param  string  $algorithm
-     * @param  int  $expire
-     * @param  array  $verifyingKeys
+     * @param  KeyRepository  $signingKeys
+     * @param  KeyRepository  $verifyingKeys
+     * @param  array  $options
      * @return void
      */
-    public function __construct(string $service, string $key, string $algorithm, int $expire, array $verifyingKeys = [])
+    public function __construct(string $algorithm, KeyRepository $signingKeys, KeyRepository $verifyingKeys, array $options = [])
     {
         if (! in_array($algorithm, $this->allowedAlgorithms)) {
             throw new InvalidSigningAlgorithmException();
         }
 
-        $this->service = $service;
-        $this->key = $key;
         $this->algorithm = $algorithm;
-        $this->expire = $expire;
+        $this->signingKeys = $signingKeys;
         $this->verifyingKeys = $verifyingKeys;
+        $this->expire = $options['expire'] ?? self::DEFAULT_EXPIRY;
     }
 
     /**
-     * Generate a bearer token.
+     * Return a bearer token.
      *
+     * @param  mixed|null  $keyId
      * @param  Context|null $context
      * @return string
      */
-    public function bearer(Context $context = null) : string
+    public function generateBearer($keyId = null, Context $context = null) : string
     {
-        return self::BEARER_PREFIX . $this->generateToken($context);
+        return self::BEARER_PREFIX . $this->generateToken($keyId, $context);
     }
 
     /**
-     * Return a signed JWT.
+     * Generate a signed token.
      *
+     * @param  mixed|null  $keyId
      * @param  Context|null  $context
-     * @param  array  $audience
      * @return string
      */
-    public function generateToken(Context $context = null) : string
+    public function generateToken($keyId = null, Context $context = null) : string
     {
+        if ($keyId === null) {
+            $key = $this->signingKeys->first();
+        } else {
+            $key = $this->signingKeys->fetch($keyId);
+        }
+
         $claims = [
             'jti' => $this->generateRandomUuid(),
-            'iss' => $this->service,
-            'exp' => time() + (int) $this->expire,
+            'exp' => time() + $this->expire,
             'iat' => time(),
         ];
 
@@ -116,128 +107,63 @@ class Epicuros
             $claims = array_merge($context->toArray(), $claims);
         }
 
-        return JWT::encode($claims, $this->key, $this->algorithm);
+        return JWT::encode($claims, $key, $this->algorithm, $keyId);
     }
 
     /**
-     * Verify the token and extract the claims.
+     * Authorize the message.
      *
-     * @param  mixed  $request
-     * @throws AndrewDalpino\Epicuros\InvalidTokenException
-     * @throws AndrewDalpino\Epicuros\ServerUnauthorizedException
-     * @return Context
+     * @param  string  $token
+     * @throws UnauthorizedException
+     * @return void
      */
-    public function authorize($request)
+    public function authorize(string $token)
     {
-        $bearer = $this->getBearerToken($request);
-
-        $key = $this->getVerifyingKey($bearer);
-
         try {
-            $this->extractClaims($bearer, $key);
+            $this->verifyToken($token);
         } catch (\Exception $e) {
-            throw new ServerUnauthorizedException();
+            throw new UnauthorizedException();
         }
-
-        return $this->acquireContext($claims);
     }
 
     /**
-     * Get the bearer token from the request headers.
-     *
-     * @param  mixed
-     * @throws AndrewDalpino\Epicuros\Exceptions\IncompatibleServerRequestException
-     * @throws AndrewDalpino\Epicuros\Exceptions\InvalidTokenException
-     * @return string
-     */
-    public function getBearerToken($request) : string
-    {
-        if ($request instanceof LaravelRequest) {
-            $authorization = $request->header('Authorization', '');
-        } else if ($request instanceof RequestInterface) {
-            $authorization = $request->getHeader('Authorization');
-        } else {
-            throw new IncompatibleServerRequestException();
-        }
-
-        $prefix = substr($authorization, 0, strlen(self::BEARER_PREFIX));
-
-        $token = substr($authorization, strlen(self::BEARER_PREFIX));
-
-        if ($prefix === self::BEARER_PREFIX) {
-            return $token;
-        }
-
-        throw new InvalidTokenException();
-    }
-
-    /**
-     * @param  string  $jwt
-     * @return string
-     */
-    protected function getVerifyingKey(string $jwt) : string
-    {
-        $issuer = $this->getTokenIssuer($jwt);
-
-        foreach ($this->verifyingKeys as $service => $verifyingKey) {
-            if ($service === $issuer) {
-                $key = $verifyingKey;
-            }
-        }
-
-        if ($this->algorithm === 'RS256') {
-            try {
-                $key = file_get_contents(storage_path($key));
-            } catch (\Exception $e) {
-                $key = null;
-            }
-        }
-
-        if (! isset($key) || empty($key)) {
-            throw new VerifyingKeyNotFoundException();
-        }
-
-        return $key;
-    }
-
-    /**
-     * @param  string  $jwt
-     * @param  string  $key
-     */
-    protected function extractClaims($jwt, $key)
-    {
-        return JWT::decode($jwt, $key, [$this->algorithm]);
-    }
-
-    /**
-     * Acquire the context from claims.
-     *
-     * @param  stdClass  $claims
+     * @param  string  $token
      * @return Context
      */
-    protected function acquireContext($claims)
+    protected function acquireContext(string $token) : Context
     {
-        return Context::reconstitute((array) $claims);
+        $claims = $this->verifyToken($token);
+
+        return Context::build($claims);
     }
 
     /**
-     * Get the issuer of the token.
+     * Verify the token and return the decoded claims.
      *
-     * @param  string  $jwt
+     * @param  string  $token
+     * @return array
+     */
+    protected function verifyToken(string $token) : array
+    {
+        return JWT::decode($token, $this->verifyingKKeys, $this->allowedAlgorithms);
+    }
+
+    /**
+     * @param  string  $token
      * @return string|null
      */
-    protected function getTokenIssuer(string $jwt) : ?string
+    protected function getTokenIssuer(string $token) : ?string
     {
-        return $this->getTokenClaims($jwt)->iss ?? null;
+        return $this->getTokenClaims($token)['iss'] ?? null;
     }
 
     /**
-     * @param  string  $jwt
-     * @return object|null
+     * @param  string  $token
+     * @return array
      */
-    protected function getTokenClaims(string $jwt)
+    protected function getTokenClaims(string $token) : array
     {
-        return json_decode(JWT::urlsafeB64Decode(explode('.', $jwt)[1] ?? null));
+        return json_decode(JWT::urlsafeB64Decode(explode('.', $token)[1] ?? []), true);
     }
 
     /**

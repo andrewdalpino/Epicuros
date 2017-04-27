@@ -4,13 +4,13 @@ namespace AndrewDalpino\Epicuros\Exceptions;
 
 use Exception;
 
-class IncompatibleServerRequestException extends Exception
+class UnauthorizedException extends Exception
 {
     /**
      * Constructor.
      */
     public function __construct()
     {
-        parent::__construct('I cannot understand the server request object.');
+        parent::__construct('Unauthorized.');
     }
 }
