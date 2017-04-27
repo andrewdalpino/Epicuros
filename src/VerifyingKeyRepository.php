@@ -2,11 +2,11 @@
 
 namespace AndrewDalpino\Epicuros;
 
-use AndrewDalpino\Epicuros\Exceptions\KeyNotFoundException;
+use AndrewDalpino\Epicuros\Exceptions\VerifyingKeyNotFoundException;
 use AndrewDalpino\Epicuros\Exceptions\KeyRepositoryIsImmutableException;
 use ArrayAccess;
 
-class KeyRepository implements ArrayAccess
+class VerifyingKeyRepository implements ArrayAccess
 {
     /**
      * @var  array  $keys
@@ -27,23 +27,13 @@ class KeyRepository implements ArrayAccess
     }
 
     /**
-     * Fetch the first key in the repository.
-     *
-     * @return string|null
-     */
-    public function first() : string
-    {
-        return $this->fetch(key(current(reset($this->keys))));
-    }
-
-    /**
      * Fetch a key from the repository.
      *
      * @param  mixed  $keyId
      * @throws KeyNotFoundException
      * @return string
      */
-    public function fetch($keyId)
+    public function fetch(string $keyId)
     {
         $key = $this->keys[$keyId] ?? null;
 

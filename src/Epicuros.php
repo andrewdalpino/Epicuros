@@ -2,6 +2,7 @@
 
 namespace AndrewDalpino\Epicuros;
 
+use AndrewDalpino\Epicuros\Exceptions\SigningKeyNotFoundException;
 use AndrewDalpino\Epicuros\Exceptions\InvalidSigningAlgorithmException;
 use AndrewDalpino\Epicuros\Exceptions\UnauthorizedException;
 use Firebase\JWT\JWT;
@@ -52,20 +53,32 @@ class Epicuros
     /**
      * Constructor.
      *
+     * @param  string  $keyId
+     * @param  string  $key
      * @param  string  $algorithm
-     * @param  KeyRepository  $signingKeys
-     * @param  KeyRepository  $verifyingKeys
+     * @param  VerifyingKeyRepository  $verifyingKeys
      * @param  array  $options
+     * @throws SigningKeyNotFoundException
+     * @throws InvalidSigningAlgorithmException
      * @return void
      */
-    public function __construct(string $algorithm, KeyRepository $signingKeys, KeyRepository $verifyingKeys, array $options = [])
+    public function __construct(string $keyId, string $key, string $algorithm, VerifyingKeyRepository $verifyingKeys, array $options = [])
     {
+        if (is_file($key)) {
+            $key = file_get_contents($key);
+        }
+
+        if ($key === null) {
+            throw new SigningKeyNotFoundException();
+        }
+
         if (! in_array($algorithm, $this->allowedAlgorithms)) {
             throw new InvalidSigningAlgorithmException();
         }
 
+        $this->keyId = $keyId;
+        $this->key = $key;
         $this->algorithm = $algorithm;
-        $this->signingKeys = $signingKeys;
         $this->verifyingKeys = $verifyingKeys;
         $this->expire = $options['expire'] ?? self::DEFAULT_EXPIRY;
     }
@@ -73,30 +86,22 @@ class Epicuros
     /**
      * Return a bearer token.
      *
-     * @param  mixed|null  $keyId
      * @param  Context|null $context
      * @return string
      */
-    public function generateBearer($keyId = null, Context $context = null) : string
+    public function generateBearer(Context $context = null) : string
     {
-        return self::BEARER_PREFIX . $this->generateToken($keyId, $context);
+        return self::BEARER_PREFIX . $this->generateToken($context);
     }
 
     /**
      * Generate a signed token.
      *
-     * @param  mixed|null  $keyId
      * @param  Context|null  $context
      * @return string
      */
-    public function generateToken($keyId = null, Context $context = null) : string
+    public function generateToken(Context $context = null) : string
     {
-        if ($keyId === null) {
-            $key = $this->signingKeys->first();
-        } else {
-            $key = $this->signingKeys->fetch($keyId);
-        }
-
         $claims = [
             'jti' => $this->generateRandomUuid(),
             'exp' => time() + $this->expire,
@@ -107,7 +112,9 @@ class Epicuros
             $claims = array_merge($context->toArray(), $claims);
         }
 
-        return JWT::encode($claims, $key, $this->algorithm, $keyId);
+        $token = JWT::encode($claims, $this->key, $this->algorithm, $this->keyId);
+
+        return $token;
     }
 
     /**
@@ -130,7 +137,7 @@ class Epicuros
      * @param  string  $token
      * @return Context
      */
-    protected function acquireContext(string $token) : Context
+    public function acquireContext(string $token) : Context
     {
         $claims = $this->verifyToken($token);
 
@@ -146,24 +153,6 @@ class Epicuros
     protected function verifyToken(string $token) : array
     {
         return JWT::decode($token, $this->verifyingKKeys, $this->allowedAlgorithms);
-    }
-
-    /**
-     * @param  string  $token
-     * @return string|null
-     */
-    protected function getTokenIssuer(string $token) : ?string
-    {
-        return $this->getTokenClaims($token)['iss'] ?? null;
-    }
-
-    /**
-     * @param  string  $token
-     * @return array
-     */
-    protected function getTokenClaims(string $token) : array
-    {
-        return json_decode(JWT::urlsafeB64Decode(explode('.', $token)[1] ?? []), true);
     }
 
     /**
