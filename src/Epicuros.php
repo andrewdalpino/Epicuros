@@ -14,6 +14,20 @@ class Epicuros
     const BEARER_PREFIX = 'Bearer ';
 
     /**
+     * The singing key identifier.
+     *
+     * @var  string  $keyId
+     */
+    protected $keyId;
+
+    /**
+     * The signing key.
+     *
+     * @var  string  $key
+     */
+    protected $key;
+
+    /**
      * The algorithm to use when signing tokens.
      *
      *  @var  string  $algorithm
@@ -21,16 +35,9 @@ class Epicuros
     protected $algorithm;
 
     /**
-     * The signing keys.
-     *
-     * @var  KeyRepository  $signingKeys
-     */
-    protected $signingKeys;
-
-    /**
      * The verifying keys.
      *
-     * @var  KeyRepository  $verifyingKeys
+     * @var  VerifyingKeyRepository  $verifyingKeys
      */
     protected $verifyingKeys;
 
@@ -124,7 +131,7 @@ class Epicuros
      * @throws UnauthorizedException
      * @return void
      */
-    public function authorize(string $token)
+    public function authorize(string $token = null)
     {
         try {
             $this->verifyToken($token);
@@ -137,7 +144,7 @@ class Epicuros
      * @param  string  $token
      * @return Context
      */
-    public function acquireContext(string $token) : Context
+    public function acquireContext(string $token = null) : Context
     {
         $claims = $this->verifyToken($token);
 
@@ -150,7 +157,7 @@ class Epicuros
      * @param  string  $token
      * @return array
      */
-    protected function verifyToken(string $token) : array
+    protected function verifyToken(string $token = null) : array
     {
         return JWT::decode($token, $this->verifyingKKeys, $this->allowedAlgorithms);
     }
