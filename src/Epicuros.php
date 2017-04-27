@@ -159,7 +159,7 @@ class Epicuros
      */
     protected function verifyToken(string $token = null) : array
     {
-        return JWT::decode($token, $this->verifyingKKeys, $this->allowedAlgorithms);
+        return JWT::decode($token, $this->verifyingKeys, $this->allowedAlgorithms);
     }
 
     /**
