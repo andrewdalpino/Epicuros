@@ -162,6 +162,17 @@ class Epicuros
         return JWT::decode($token, $this->verifyingKeys, $this->allowedAlgorithms);
     }
 
+
+    /**
+     * @param  string|null  $token
+     * @return object|null
+     */
+    public function getTokenClaims(string $token = null)
+    {
+        return json_decode(JWT::urlsafeB64Decode(explode('.', $token)[1] ?? null));
+    }
+
+
     /**
      * @return string
      */
