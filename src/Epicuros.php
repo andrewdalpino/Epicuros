@@ -157,7 +157,7 @@ class Epicuros
      * @param  string  $token
      * @return array
      */
-    protected function verifyToken(string $token = null) : array
+    public function verifyToken(string $token = null) : array
     {
         return JWT::decode($token, $this->verifyingKeys, $this->allowedAlgorithms);
     }
