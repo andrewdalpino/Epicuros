@@ -6,10 +6,10 @@ use AndrewDalpino\Epicuros\Exceptions\SigningKeyNotFoundException;
 use AndrewDalpino\Epicuros\Exceptions\InvalidSigningAlgorithmException;
 use AndrewDalpino\Epicuros\Exceptions\UnauthorizedException;
 use Firebase\JWT\JWT;
-use Ramsey\Uuid\Uuid;
 
 class Epicuros
 {
+    const JTI_LENGTH = 20;
     const DEFAULT_EXPIRY = 60; // In seconds.
     const BEARER_PREFIX = 'Bearer ';
 
@@ -37,7 +37,7 @@ class Epicuros
     /**
      * The verifying keys.
      *
-     * @var  VerifyingKeyRepository  $verifyingKeys
+     * @var  array  $verifyingKeys
      */
     protected $verifyingKeys;
 
@@ -63,13 +63,13 @@ class Epicuros
      * @param  string  $keyId
      * @param  string  $key
      * @param  string  $algorithm
-     * @param  VerifyingKeyRepository  $verifyingKeys
+     * @param  array  $verifyingKeys
      * @param  array  $options
      * @throws SigningKeyNotFoundException
      * @throws InvalidSigningAlgorithmException
      * @return void
      */
-    public function __construct(string $keyId, string $key, string $algorithm, VerifyingKeyRepository $verifyingKeys, array $options = [])
+    public function __construct(string $keyId, string $key, string $algorithm, array $verifyingKeys = [], array $options = [])
     {
         if (is_file($key)) {
             $key = file_get_contents($key);
@@ -104,20 +104,16 @@ class Epicuros
     /**
      * Generate a signed token.
      *
-     * @param  Context|null  $context
+     * @param  array  $claims
      * @return string
      */
-    public function generateToken(Context $context = null) : string
+    public function generateToken(array $claims = []) : string
     {
-        $claims = [
+        $claims = array_merge($claims, [
             'jti' => $this->generateRandomUuid(),
             'exp' => time() + $this->expire,
             'iat' => time(),
-        ];
-
-        if (! is_null($context)) {
-            $claims = array_merge($context->toArray(), $claims);
-        }
+        ]);
 
         $token = JWT::encode($claims, $this->key, $this->algorithm, $this->keyId);
 
@@ -141,17 +137,6 @@ class Epicuros
     }
 
     /**
-     * @param  string  $token
-     * @return Context
-     */
-    public function acquireContext(string $token = null) : Context
-    {
-        $claims = $this->verifyToken($token);
-
-        return Context::build($claims);
-    }
-
-    /**
      * Verify the token and return the decoded claims.
      *
      * @param  string  $token
@@ -164,20 +149,21 @@ class Epicuros
 
 
     /**
+     * Return the decoded claims without verifying the token signature.
+     *
      * @param  string|null  $token
-     * @return object|null
+     * @return array
      */
     public function getTokenClaims(string $token = null)
     {
-        return json_decode(JWT::urlsafeB64Decode(explode('.', $token)[1] ?? null));
+        return json_decode(JWT::urlsafeB64Decode(explode('.', $token)[1] ?? null), true);
     }
-
 
     /**
      * @return string
      */
-    protected function generateRandomUuid() : string
+    protected function generateTokenIdentifier() : string
     {
-        return Uuid::uuid4()->toString();
+        return bin2hex(random_bytes(self::JTI_LENGTH));
     }
 }
