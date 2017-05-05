@@ -96,9 +96,9 @@ class Epicuros
      * @param  Context|null $context
      * @return string
      */
-    public function generateBearer(Context $context = null) : string
+    public function generateBearer(array $claims = []) : string
     {
-        return self::BEARER_PREFIX . $this->generateToken($context);
+        return self::BEARER_PREFIX . $this->generateToken($claims);
     }
 
     /**
