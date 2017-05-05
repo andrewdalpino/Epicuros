@@ -110,7 +110,7 @@ class Epicuros
     public function generateToken(array $claims = []) : string
     {
         $claims = array_merge($claims, [
-            'jti' => $this->generateRandomUuid(),
+            'jti' => $this->generateTokenIdentifier(),
             'exp' => time() + $this->expire,
             'iat' => time(),
         ]);
