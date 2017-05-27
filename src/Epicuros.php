@@ -154,9 +154,9 @@ class Epicuros
      * @param  string|null  $token
      * @return array
      */
-    public function getTokenClaims(string $token = null)
+    public function getTokenClaims(string $token = null) : array
     {
-        return json_decode(JWT::urlsafeB64Decode(explode('.', $token)[1] ?? null), true);
+        return json_decode(JWT::urlsafeB64Decode(explode('.', $token)[1] ?? null), true) ?? [];
     }
 
     /**
