@@ -140,9 +140,9 @@ class Epicuros
      * Verify the token and return the decoded claims.
      *
      * @param  string  $token
-     * @return array
+     * @return mixed
      */
-    public function verifyToken(string $token = null) : array
+    public function verifyToken(string $token = null)
     {
         return JWT::decode($token, $this->verifyingKeys, $this->allowedAlgorithms);
     }
